@@ -20,7 +20,7 @@ router.get('/:deviceId/live', auth, async (req, res) => {
     const { data, error } = await supabase
       .from('devices')
       .select('latitude, longitude, location_updated_at, battery_level, battery_charging, is_online, last_seen')
-      .eq('id', req.params.deviceId)
+      .eq('device_id', req.params.deviceId)
       .single();
     if (error) throw error;
     res.json(data);
