@@ -52,7 +52,7 @@ router.post('/', auth, async (req, res) => {
         phone_number: phoneNumber,
         installation_id: installationId,
         app_version: appVersion,
-        is_online: true,
+        is_online: 1,
         last_seen: new Date()
       }, { onConflict: 'device_id' })
       .select()
@@ -71,7 +71,7 @@ router.post('/:deviceId/heartbeat', async (req, res) => {
     const { batteryLevel, batteryCharging, latitude, longitude } = req.body;
 
     const update = {
-      is_online: true,
+      is_online: 1,
       last_seen: new Date(),
       battery_level: batteryLevel,
       battery_charging: batteryCharging

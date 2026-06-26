@@ -10,7 +10,7 @@ router.post('/register', async (req, res) => {
       user_id: userId, device_name: deviceName, device_model: deviceModel,
       os_version: osVersion, android_version: androidVersion, device_id: deviceId,
       phone_number: phoneNumber, installation_id: installationId, app_version: appVersion,
-      is_online: true, last_seen: new Date()
+      is_online: 1, last_seen: new Date()
     }, { onConflict: 'device_id' }).select().single();
     if (error) throw error;
     res.json(data);
@@ -21,7 +21,7 @@ router.post('/heartbeat', async (req, res) => {
   try {
     const { deviceId, batteryLevel, batteryCharging, latitude, longitude } = req.body;
     if (!deviceId) return res.status(400).json({ error: 'Missing deviceId' });
-    const update = { is_online: true, last_seen: new Date(), battery_level: batteryLevel, battery_charging: batteryCharging };
+    const update = { is_online: 1, last_seen: new Date(), battery_level: batteryLevel, battery_charging: batteryCharging ? 1 : 0 };
     if (latitude !== undefined) { update.latitude = latitude; update.longitude = longitude; update.location_updated_at = new Date(); }
     const { error } = await supabase.from('devices').update(update).eq('device_id', deviceId);
     if (error) throw error;
