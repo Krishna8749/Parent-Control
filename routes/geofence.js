@@ -35,14 +35,15 @@ router.post('/:deviceId', auth, async (req, res) => {
 // Update geofence zone
 router.put('/:id', auth, async (req, res) => {
   try {
-    const { name, latitude, longitude, radiusMeters, zoneType, isActive, notifyOnEnter, notifyOnExit } = req.body;
+    const { name, latitude, longitude, radiusMeters, zoneType, isActive, is_active, notifyOnEnter, notifyOnExit } = req.body;
+    const active = isActive !== undefined ? isActive : is_active;
     const update = {};
     if (name !== undefined) update.name = name;
     if (latitude !== undefined) update.latitude = latitude;
     if (longitude !== undefined) update.longitude = longitude;
     if (radiusMeters !== undefined) update.radius_meters = radiusMeters;
     if (zoneType !== undefined) update.zone_type = zoneType;
-    if (isActive !== undefined) update.is_active = isActive ? 1 : 0;
+    if (active !== undefined) update.is_active = active ? 1 : 0;
     if (notifyOnEnter !== undefined) update.notify_on_enter = notifyOnEnter ? 1 : 0;
     if (notifyOnExit !== undefined) update.notify_on_exit = notifyOnExit ? 1 : 0;
 
