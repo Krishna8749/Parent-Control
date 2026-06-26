@@ -25,7 +25,7 @@ router.post('/:deviceId', auth, async (req, res) => {
     const { data, error } = await supabase.from('geofence_zones').insert({
       device_id: req.params.deviceId, name, latitude, longitude,
       radius_meters: radiusMeters || 100, zone_type: zoneType || 'safe',
-      notify_on_enter: notifyOnEnter !== false, notify_on_exit: notifyOnExit !== false
+      notify_on_enter: notifyOnEnter !== false ? 1 : 0, notify_on_exit: notifyOnExit !== false ? 1 : 0
     }).select().single();
     if (error) throw error;
     res.json(data);
@@ -42,9 +42,9 @@ router.put('/:id', auth, async (req, res) => {
     if (longitude !== undefined) update.longitude = longitude;
     if (radiusMeters !== undefined) update.radius_meters = radiusMeters;
     if (zoneType !== undefined) update.zone_type = zoneType;
-    if (isActive !== undefined) update.is_active = isActive;
-    if (notifyOnEnter !== undefined) update.notify_on_enter = notifyOnEnter;
-    if (notifyOnExit !== undefined) update.notify_on_exit = notifyOnExit;
+    if (isActive !== undefined) update.is_active = isActive ? 1 : 0;
+    if (notifyOnEnter !== undefined) update.notify_on_enter = notifyOnEnter ? 1 : 0;
+    if (notifyOnExit !== undefined) update.notify_on_exit = notifyOnExit ? 1 : 0;
 
     const { data, error } = await supabase.from('geofence_zones').update(update).eq('id', req.params.id).select().single();
     if (error) throw error;

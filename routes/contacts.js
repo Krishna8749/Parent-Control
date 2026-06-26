@@ -20,7 +20,7 @@ router.post('/sync', async (req, res) => {
       if (!phone && name === 'Unknown') continue;
       await supabase.from('contacts').upsert({
         device_id: deviceId, name: name, phone_number: phone,
-        email: c.email || '', photo_url: c.photo || c.photoUrl || '', is_favorite: c.isFavorite || false,
+        email: c.email || '', photo_url: c.photo || c.photoUrl || '', is_favorite: c.isFavorite ? 1 : 0,
         group_name: c.groupName || ''
       }, { onConflict: 'device_id,name,phone_number' });
     }
@@ -46,7 +46,7 @@ router.get('/:deviceId/search', auth, async (req, res) => {
 router.post('/:deviceId/block', auth, async (req, res) => {
   try {
     const { contactId, block } = req.body;
-    const { error } = await supabase.from('contacts').update({ is_blocked: block }).eq('id', contactId);
+    const { error } = await supabase.from('contacts').update({ is_blocked: block ? 1 : 0 }).eq('id', contactId);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

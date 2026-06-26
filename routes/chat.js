@@ -21,7 +21,7 @@ router.post('/sync', async (req, res) => {
       device_id: deviceId, app_name: appName, conversation_id: m.conversationId,
       contact_name: m.contactName, contact_avatar: m.contactAvatar,
       sender: m.sender, receiver: m.receiver, message: m.message,
-      direction: m.direction, has_media: m.hasMedia, media_url: m.mediaUrl,
+      direction: m.direction, has_media: m.hasMedia ? 1 : 0, media_url: m.mediaUrl,
       media_type: m.mediaType, timestamp: m.timestamp || new Date()
     }));
     const { data, error } = await supabase.from('chat_messages').insert(inserts).select();

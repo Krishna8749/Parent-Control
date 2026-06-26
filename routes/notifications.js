@@ -23,7 +23,7 @@ router.get('/unread', auth, async (req, res) => {
       .from('notifications')
       .select('id', { count: 'exact', head: true })
       .eq('user_id', req.userId)
-      .eq('is_read', false);
+      .eq('is_read', 0);
     if (error) throw error;
     res.json({ unread: count || 0 });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -32,7 +32,7 @@ router.get('/unread', auth, async (req, res) => {
 // Mark as read
 router.put('/:id/read', auth, async (req, res) => {
   try {
-    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('id', req.params.id).eq('user_id', req.userId);
+    const { error } = await supabase.from('notifications').update({ is_read: 1 }).eq('id', req.params.id).eq('user_id', req.userId);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -41,7 +41,7 @@ router.put('/:id/read', auth, async (req, res) => {
 // Mark all as read
 router.put('/read-all', auth, async (req, res) => {
   try {
-    const { error } = await supabase.from('notifications').update({ is_read: true }).eq('user_id', req.userId).eq('is_read', false);
+    const { error } = await supabase.from('notifications').update({ is_read: 1 }).eq('user_id', req.userId).eq('is_read', 0);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

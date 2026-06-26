@@ -12,7 +12,7 @@ router.get('/:deviceId', auth, async (req, res) => {
 
 router.get('/:deviceId/unread', auth, async (req, res) => {
   try {
-    const { count, error } = await supabase.from('alerts').select('id', { count: 'exact', head: true }).eq('device_id', req.params.deviceId).eq('is_read', false);
+    const { count, error } = await supabase.from('alerts').select('id', { count: 'exact', head: true }).eq('device_id', req.params.deviceId).eq('is_read', 0);
     if (error) throw error;
     res.json({ unread: count || 0 });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -34,7 +34,7 @@ router.post('/sync', async (req, res) => {
 
 router.put('/:id/read', auth, async (req, res) => {
   try {
-    const { error } = await supabase.from('alerts').update({ is_read: true }).eq('id', req.params.id);
+    const { error } = await supabase.from('alerts').update({ is_read: 1 }).eq('id', req.params.id);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -43,7 +43,7 @@ router.put('/:id/read', auth, async (req, res) => {
 router.put('/read-all', auth, async (req, res) => {
   try {
     const { deviceId } = req.body;
-    let query = supabase.from('alerts').update({ is_read: true }).eq('is_read', false);
+    let query = supabase.from('alerts').update({ is_read: 1 }).eq('is_read', 0);
     if (deviceId) query = query.eq('device_id', deviceId);
     const { error } = await query;
     if (error) throw error;

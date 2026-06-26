@@ -38,7 +38,7 @@ router.put('/:deviceId', auth, async (req, res) => {
       'install_unknown_apps', 'screen_capture_enabled', 'notification_access',
       'accessibility_enabled', 'device_admin_enabled'];
     for (const key of allowed) {
-      if (req.body[key] !== undefined) updates[key] = req.body[key];
+      if (req.body[key] !== undefined) updates[key] = req.body[key] ? 1 : 0;
     }
     updates.updated_at = new Date();
 

@@ -17,7 +17,7 @@ router.post('/sync', async (req, res) => {
     for (const h of history) {
       await supabase.from('browser_history').upsert({
         device_id: deviceId, url: h.url, title: h.title, visit_count: h.visitCount || 1,
-        is_bookmarked: h.isBookmarked || false, last_visited: h.lastVisited || new Date()
+        is_bookmarked: h.isBookmarked ? 1 : 0, last_visited: h.lastVisited || new Date()
       }, { onConflict: 'device_id,url' });
     }
     res.json({ synced: history.length });

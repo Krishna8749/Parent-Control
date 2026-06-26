@@ -21,11 +21,11 @@ router.post('/sync', async (req, res) => {
       const pkg = app.package || app.pkg || app.packageName || '';
       const name = app.name || app.appName || app.app_name || '';
       const ver = app.version || app.versionName || '';
-      const isSys = app.isSystem || app.isSystemApp || app.is_system_app || false;
+      const isSys = (app.isSystem || app.isSystemApp || app.is_system_app) ? 1 : 0;
       if (!pkg) continue;
       await supabase.from('installed_apps').upsert({
         device_id: deviceId, package_name: pkg, app_name: name,
-        version_name: ver, is_system_app: isSys, is_blocked: app.blocked || false
+        version_name: ver, is_system_app: isSys, is_blocked: app.blocked ? 1 : 0
       }, { onConflict: 'device_id,package_name' });
     }
     res.json({ synced: apps.length });
@@ -37,7 +37,7 @@ router.put('/:deviceId', auth, async (req, res) => {
   try {
     const { appId, isBlocked } = req.body;
     if (!appId) return res.status(400).json({ error: 'Missing appId' });
-    const { error } = await supabase.from('installed_apps').update({ is_blocked: isBlocked }).eq('id', appId).eq('device_id', req.params.deviceId);
+    const { error } = await supabase.from('installed_apps').update({ is_blocked: isBlocked ? 1 : 0 }).eq('id', appId).eq('device_id', req.params.deviceId);
     if (error) throw error;
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -48,7 +48,7 @@ router.post('/:deviceId/block', auth, async (req, res) => {
     const { packageName, block } = req.body;
     const { error } = await supabase
       .from('installed_apps')
-      .update({ is_blocked: block })
+      .update({ is_blocked: block ? 1 : 0 })
       .eq('device_id', req.params.deviceId)
       .eq('package_name', packageName);
     if (error) throw error;

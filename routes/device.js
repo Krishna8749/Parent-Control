@@ -101,7 +101,7 @@ router.post('/sim/:deviceId', async (req, res) => {
       await supabase.from('sim_info').upsert({
         device_id: req.params.deviceId, sim_slot: sim.simSlot, phone_number: sim.phoneNumber,
         carrier_name: sim.carrierName, network_type: sim.networkType,
-        country_code: sim.countryCode, is_active: sim.isActive !== false
+        country_code: sim.countryCode, is_active: sim.isActive !== false ? 1 : 0
       }, { onConflict: 'device_id,sim_slot' });
     }
     res.json({ ok: true });

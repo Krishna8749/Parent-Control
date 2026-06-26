@@ -18,7 +18,7 @@ router.post('/:deviceId', auth, async (req, res) => {
     if (!phoneNumber) return res.status(400).json({ error: 'Missing phoneNumber' });
     const { data, error } = await supabase.from('blocked_numbers').insert({
       device_id: req.params.deviceId, phone_number: phoneNumber, reason,
-      block_calls: blockCalls !== false, block_sms: blockSms !== false
+      block_calls: blockCalls !== false ? 1 : 0, block_sms: blockSms !== false ? 1 : 0
     }).select().single();
     if (error) throw error;
     res.json(data);

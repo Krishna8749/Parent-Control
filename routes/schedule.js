@@ -35,7 +35,7 @@ router.put('/:id', auth, async (req, res) => {
     if (startTime !== undefined) update.start_time = startTime;
     if (endTime !== undefined) update.end_time = endTime;
     if (restrictionType !== undefined) update.restriction_type = restrictionType;
-    if (isActive !== undefined) update.is_active = isActive;
+    if (isActive !== undefined) update.is_active = isActive ? 1 : 0;
     if (targetPackages !== undefined) update.target_packages = targetPackages;
     if (internetWhitelist !== undefined) update.internet_whitelist = internetWhitelist;
     if (internetBlacklist !== undefined) update.internet_blacklist = internetBlacklist;

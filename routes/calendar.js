@@ -18,7 +18,7 @@ router.post('/sync', async (req, res) => {
       device_id: deviceId, title: e.title || '', description: e.description || '',
       start_time: e.start || e.startTime || e.date || e.timestamp || new Date(),
       end_time: e.end || e.endTime || '', location: e.location || '',
-      is_all_day: e.isAllDay || false, reminder_minutes: e.reminderMinutes || 0,
+      is_all_day: e.isAllDay ? 1 : 0, reminder_minutes: e.reminderMinutes || 0,
       recurrence: e.recurrence || '', color: e.color || ''
     }));
     const { data, error } = await supabase.from('calendar_events').insert(inserts).select();
