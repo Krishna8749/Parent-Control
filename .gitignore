@@ -1,0 +1,13 @@
+node_modules/
+.env
+data/
+streams/
+uploads/
+logs/
+*.db
+*.log
+server.err
+server.log
+check_*.js
+clean_db.js
+ecosystem.config.js

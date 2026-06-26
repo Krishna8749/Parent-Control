@@ -1,0 +1,15 @@
+node_modules
+.git
+data
+streams
+uploads
+logs
+*.db
+*.log
+err
+.env
+README.md
+ecosystem.config.js
+check_*.js
+clean_db.js
+schema.sql

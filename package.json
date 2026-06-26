@@ -1,0 +1,33 @@
+{
+  "name": "parental-control-backend",
+  "version": "3.0.0",
+  "description": "Child Parental Control - Backend API (Vercel-ready)",
+  "main": "api/index.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "prod": "NODE_ENV=production node server.js",
+    "vercel": "vercel deploy --prod",
+    "health": "curl -s http://localhost:3000/api/health | node -e \"process.stdin.resume();let d='';process.stdin.on('data',c=>d+=c);process.stdin.on('end',()=>console.log(JSON.stringify(JSON.parse(d),null,2)))\"",
+    "clean": "rm -rf data/*.db streams/* uploads/* logs/*",
+    "test": "node -e \"require('./config/sqlite_store');console.log('SQLite OK')\""
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.45.0",
+    "bcryptjs": "^2.4.3",
+    "cloudinary": "^2.5.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "morgan": "^1.10.0",
+    "multer": "^1.4.5-lts.1",
+    "uuid": "^10.0.0"
+  },
+  "optionalDependencies": {
+    "better-sqlite3": "^11.7.0",
+    "socket.io": "^4.8.0"
+  }
+}

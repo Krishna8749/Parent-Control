@@ -1,0 +1,1087 @@
+<!DOCTYPE html><html lang="en"><head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Parental Control Panel v3.0</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.min.css"/>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;scrollbar-width:thin}
+:root{--bg:#0f0f1a;--card:#1a1a2e;--accent:#00b894;--accent2:#3742fa;--text:#e0e0e0;--text2:#888;--border:#2a2a3e;--danger:#ff4757;--warn:#ffa502;--success:#2ed573;--glass:rgba(26,26,46,0.7)}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);overflow-x:hidden}
+::-webkit-scrollbar{width:6px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--border);border-radius:3px}
+input,select,textarea,button{font-family:inherit}
+@keyframes fadeUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.05)}}
+@keyframes spin{0%{transform:rotate(0deg)}100%{transform:rotate(360deg)}}
+@keyframes slideRight{from{transform:translateX(-20px);opacity:0}to{transform:translateX(0);opacity:1}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes floatOrb{0%,100%{transform:translate(0,0)scale(1)}25%{transform:translate(30px,-40px)scale(1.1)}50%{transform:translate(-20px,-70px)scale(.9)}75%{transform:translate(-40px,-20px)scale(1.05)}}
+@keyframes blink{0%,100%{opacity:1}50%{opacity:0}}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:40px auto}
+.skeleton{background:linear-gradient(90deg,var(--border)25%,rgba(255,255,255,.05)50%,var(--border)75%);background-size:200%100%;animation:shimmer 1.5s infinite;border-radius:6px}
+.toast-container{position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:8px}
+.toast{padding:14px 20px;border-radius:10px;color:#fff;font-size:.9rem;animation:fadeUp .3s;min-width:250px;display:flex;align-items:center;gap:10px;transition:.3s}
+.toast-s{background:linear-gradient(135deg,var(--accent),#00a884)}.toast-e{background:linear-gradient(135deg,var(--danger),#cc3540)}.toast-i{background:linear-gradient(135deg,var(--accent2),#2c3eaa)}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);backdrop-filter:blur(5px);z-index:9000;display:none;align-items:center;justify-content:center}
+.modal-overlay.show{display:flex}
+.modal{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:24px;width:90%;max-width:520px;max-height:90vh;overflow-y:auto;animation:fadeUp .3s}
+.modal h3{margin-bottom:16px;font-size:1.1rem}.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.btn{padding:10px 20px;border:none;border-radius:8px;cursor:pointer;font-size:.9rem;font-weight:600;transition:.3s;display:inline-flex;align-items:center;gap:6px}
+.btn-p{background:linear-gradient(135deg,var(--accent),#00a884);color:#fff}.btn-p:hover{transform:translateY(-2px);box-shadow:0 5px 20px rgba(0,184,148,.4)}
+.btn-s{background:linear-gradient(135deg,var(--accent2),#2c3eaa);color:#fff}.btn-d{background:linear-gradient(135deg,var(--danger),#cc3540);color:#fff}
+.btn-gh{background:transparent;border:1px solid var(--border);color:var(--text)}.btn-gh:hover{border-color:var(--accent);color:var(--accent)}
+.btn-sm{padding:6px 12px;font-size:.8rem}.btn-icon{background:none;border:none;color:var(--text2);cursor:pointer;padding:6px;border-radius:6px;transition:.3s;font-size:1.1rem}
+.btn-icon:hover{color:var(--accent);background:rgba(0,184,148,.1)}
+.form-g{margin-bottom:14px}.form-g label{display:block;font-size:.82rem;color:var(--text2);margin-bottom:4px}
+.form-g input,.form-g select,.form-g textarea{width:100%;padding:10px 14px;background:rgba(255,255,255,.05);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:.9rem;transition:.3s}
+.form-g input:focus,.form-g select:focus,.form-g textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 10px rgba(0,184,148,.2)}
+.form-g textarea{resize:vertical;min-height:60px}.form-g select{appearance:none;cursor:pointer}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}.form-row-3{grid-template-columns:1fr 1fr 1fr}
+.badge{display:inline-block;padding:2px 8px;border-radius:10px;font-size:.7rem;font-weight:600}
+.badge-in{background:rgba(46,213,115,.15);color:var(--success)}.badge-out{background:rgba(0,184,148,.15);color:var(--accent)}
+.badge-miss{background:rgba(255,71,87,.15);color:var(--danger)}.badge-pend{background:rgba(255,165,2,.15);color:var(--warn)}
+.badge-exec{background:rgba(46,213,115,.15);color:var(--success)}.badge-fail{background:rgba(255,71,87,.15);color:var(--danger)}
+.badge-block{background:rgba(255,71,87,.15);color:var(--danger)}.badge-act{background:rgba(0,184,148,.15);color:var(--accent)}
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--text2)}
+.empty-state .empty-icon{font-size:3rem;margin-bottom:16px;opacity:.5}.empty-state p{font-size:.9rem}
+.login-wrapper{display:flex;justify-content:center;align-items:center;min-height:100vh;background:radial-gradient(ellipse at center,#1a1a3e,#0f0f1a 70%);position:relative;overflow:hidden}
+.login-wrapper .orb{position:absolute;border-radius:50%;filter:blur(80px);opacity:.3;animation:floatOrb 8s ease-in-out infinite}
+.login-wrapper .orb:nth-child(1){width:300px;height:300px;background:#00b894;top:10%;left:20%}
+.login-wrapper .orb:nth-child(2){width:250px;height:250px;background:#3742fa;bottom:20%;right:15%;animation-delay:2s}
+.login-wrapper .orb:nth-child(3){width:200px;height:200px;background:#6c5ce7;top:60%;left:60%;animation-delay:4s}
+.login-box{background:var(--glass);backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:16px;padding:40px;width:380px;position:relative;z-index:1;animation:fadeUp .6s}
+.login-box h2{text-align:center;margin-bottom:24px;font-size:1.5rem;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.login-tabs{display:flex;margin-bottom:24px;border-bottom:1px solid var(--border)}
+.login-tab{flex:1;padding:10px;text-align:center;cursor:pointer;color:var(--text2);border-bottom:2px solid transparent;transition:.3s}
+.login-tab.active{color:var(--accent);border-bottom-color:var(--accent)}
+.app-wrapper{display:none;min-height:100vh}
+.sidebar{position:fixed;top:0;left:0;width:240px;height:100vh;background:linear-gradient(180deg,#1a1a2e,#16162a);border-right:1px solid var(--border);z-index:100;display:flex;flex-direction:column;transition:transform .3s}
+.sidebar-logo{padding:20px;font-size:1.2rem;font-weight:700;background:linear-gradient(135deg,var(--accent),var(--accent2));-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-align:center;border-bottom:1px solid var(--border);cursor:pointer}
+.sidebar-nav{flex:1;overflow-y:auto;padding:8px 0}
+.nav-l{display:flex;align-items:center;padding:10px 20px;color:var(--text2);text-decoration:none;transition:.3s;cursor:pointer;border-left:3px solid transparent;font-size:.88rem;gap:0}
+.nav-l:hover{color:var(--text);background:rgba(255,255,255,.03)}
+.nav-l.active{color:var(--accent);border-left-color:var(--accent);background:rgba(0,184,148,.08)}
+.nav-l .ico{width:22px;margin-right:10px;text-align:center;font-size:1rem}
+.nav-group{padding:12px 20px 4px;font-size:.7rem;color:var(--text2);text-transform:uppercase;letter-spacing:1px;font-weight:600}
+.sidebar-footer{padding:14px 20px;border-top:1px solid var(--border);font-size:.8rem;color:var(--text2)}
+.sidebar-footer .dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:8px;animation:pulse 2s infinite}
+.sidebar-footer .dot.on{background:var(--success)}.sidebar-footer .dot.off{background:var(--danger)}
+.main{margin-left:240px;min-height:100vh}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:12px 24px;border-bottom:1px solid var(--border);background:rgba(15,15,26,.85);backdrop-filter:blur(10px);position:sticky;top:0;z-index:50;gap:12px}
+.topbar-left{display:flex;align-items:center;gap:12px}
+.topbar-left h1{font-size:1.15rem;font-weight:600;white-space:nowrap}
+.topbar-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.topbar select{background:var(--card);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:8px;cursor:pointer;font-size:.85rem;max-width:200px}
+.user-chip{background:linear-gradient(135deg,var(--accent),var(--accent2));padding:6px 14px;border-radius:20px;font-size:.8rem;font-weight:600;white-space:nowrap}
+.page-content{padding:24px;display:none}
+.page-content.active{display:block;animation:fadeUp .4s}
+.sidebar-toggle{display:none;background:none;border:none;color:var(--text);font-size:1.3rem;cursor:pointer}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;margin-bottom:20px}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;position:relative;overflow:hidden;transition:.3s;animation:fadeUp .5s both}
+.stat-card:hover{border-color:var(--accent);box-shadow:0 0 20px rgba(0,184,148,.15);transform:translateY(-2px)}
+.stat-card .stat-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:1.1rem;margin-bottom:10px}
+.stat-card .stat-val{font-size:1.8rem;font-weight:700}
+.stat-card .stat-lbl{font-size:.8rem;color:var(--text2);margin-top:2px}
+.stat-bar{height:3px;background:var(--border);border-radius:2px;margin-top:10px;overflow:hidden}
+.stat-bar-fill{height:100%;border-radius:2px;transition:width 1s ease;width:0}
+.table-card{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;backdrop-filter:blur(10px);transition:.3s;margin-bottom:16px}
+.table-card:hover{border-color:rgba(0,184,148,.3)}
+.tc-header{display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.tc-header h3{font-size:.95rem;font-weight:600}
+.tc-header input{background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);padding:6px 10px;border-radius:6px;font-size:.82rem;min-width:180px}
+.tc-body{padding:0;max-height:600px;overflow-y:auto}
+.tc-body table{width:100%;border-collapse:collapse;font-size:.85rem}
+.tc-body th{text-align:left;padding:10px 14px;font-size:.75rem;color:var(--text2);font-weight:600;border-bottom:1px solid var(--border);position:sticky;top:0;background:var(--card)}
+.tc-body td{padding:10px 14px;border-bottom:1px solid rgba(255,255,255,.03)}
+.tc-body tr:hover{background:rgba(0,184,148,.03)}
+.list-item{display:flex;align-items:center;padding:12px 18px;border-bottom:1px solid rgba(255,255,255,.03);transition:.2s;cursor:pointer;animation:slideRight .3s both}
+.list-item:hover{background:rgba(0,184,148,.04)}
+.list-item:last-child{border-bottom:none}
+.list-item .av{width:36px;height:36px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:.8rem;margin-right:12px;flex-shrink:0}
+.list-item .info{flex:1;min-width:0}
+.list-item .info .nm{font-size:.88rem;font-weight:500}
+.list-item .info .dt{font-size:.78rem;color:var(--text2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-item .meta{text-align:right;font-size:.72rem;color:var(--text2);flex-shrink:0}
+.rc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px;margin-bottom:20px}
+.rc-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center;cursor:pointer;transition:.3s}
+.rc-card:hover{border-color:var(--accent);box-shadow:0 0 25px rgba(0,184,148,.2);transform:translateY(-3px)}
+.rc-card .rc-icon{font-size:1.8rem;margin-bottom:8px}
+.rc-card .rc-lbl{font-size:.82rem;font-weight:500}
+.rc-card .rc-sub{font-size:.7rem;color:var(--text2);margin-top:4px}
+#mapId{width:100%;height:400px;border-radius:12px;margin-bottom:16px;z-index:1}
+.chart-c{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:18px;margin-bottom:16px}
+.chart-c h3{font-size:.95rem;margin-bottom:12px}
+.im-tabs{display:flex;flex-wrap:wrap;gap:4px;margin-bottom:14px;padding:4px;background:var(--card);border-radius:10px;border:1px solid var(--border)}
+.im-tab{padding:7px 12px;border-radius:8px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:.3s}
+.im-tab:hover{color:var(--text)}.im-tab.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:600}
+.chat-list{max-height:600px;overflow-y:auto;padding:16px}
+.chat-b{max-width:75%;padding:10px 14px;border-radius:14px;margin-bottom:8px;font-size:.88rem;animation:fadeUp .3s}
+.chat-b.sent{background:linear-gradient(135deg,var(--accent),#00a884);color:#fff;margin-left:auto;border-bottom-right-radius:4px}
+.chat-b.recv{background:var(--card);border:1px solid var(--border);border-bottom-left-radius:4px}
+.chat-b .chat-m{font-size:.68rem;color:rgba(255,255,255,.6);margin-top:4px}
+.chat-b.recv .chat-m{color:var(--text2)}
+.pic-g{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;padding:12px}
+.pic-t{aspect-ratio:1;border-radius:8px;overflow:hidden;cursor:pointer;transition:.3s;position:relative;background:var(--border)}
+.pic-t:hover{transform:scale(1.03);box-shadow:0 5px 20px rgba(0,0,0,.3)}
+.pic-t img{width:100%;height:100%;object-fit:cover}
+.pic-t .pic-over{position:absolute;bottom:0;left:0;right:0;background:linear-gradient(transparent,rgba(0,0,0,.7));padding:8px;font-size:.7rem}
+.schedule-grid{display:grid;grid-template-columns:repeat(8,1fr);gap:3px;margin-bottom:16px}
+.sh-cell{aspect-ratio:1;border-radius:4px;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;font-size:.55rem}
+.sh-cell.allowed{background:rgba(0,184,148,.15)}.sh-cell.blocked{background:rgba(255,71,87,.15)}
+.sh-cell:hover{transform:scale(1.1);filter:brightness(1.3)}
+.sh-header{padding:6px 4px;text-align:center;font-size:.65rem;color:var(--text2);font-weight:600}
+.fe-t{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap;align-items:center}
+.fe-t input{flex:1;min-width:150px;background:rgba(255,255,255,.05);border:1px solid var(--border);color:var(--text);padding:7px 10px;border-radius:6px;font-size:.82rem}
+.fe-item{display:flex;align-items:center;padding:10px 14px;background:var(--card);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;cursor:pointer;transition:.3s}
+.fe-item:hover{border-color:var(--accent);transform:translateX(5px);box-shadow:0 0 15px rgba(0,184,148,.1)}
+.fe-item .fe-icon{font-size:1.2rem;margin-right:12px;width:24px;text-align:center}
+.fe-item .fe-name{flex:1;font-size:.85rem}.fe-item .fe-size{font-size:.75rem;color:var(--text2)}
+.lv-p{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden}
+.lv-preview{width:100%;aspect-ratio:16/9;background:#000;display:flex;align-items:center;justify-content:center;color:var(--text2);position:relative}
+.lv-preview img{width:100%;height:100%;object-fit:contain}
+.lv-ctrls{padding:14px;display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
+.acc-s{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:22px;margin-bottom:14px}
+.acc-s h3{margin-bottom:14px;font-size:1rem}
+.cal-nav{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.cal-nav h3{font-size:1rem}
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal-hdr{padding:6px;text-align:center;font-size:.72rem;color:var(--text2);font-weight:600}
+.cal-day{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(255,255,255,.03);border-radius:6px;font-size:.8rem;cursor:pointer;transition:.2s;position:relative}
+.cal-day:hover{background:rgba(0,184,148,.1)}
+.cal-day.today{border:1px solid var(--accent);color:var(--accent)}
+.cal-day.empty{background:none;cursor:default}
+.cal-day .ev-dot{width:4px;height:4px;border-radius:50%;background:var(--accent);position:absolute;bottom:3px}
+.tab-hdr{display:flex;gap:4px;margin-bottom:14px;padding:4px;background:var(--card);border-radius:10px;border:1px solid var(--border);flex-wrap:wrap}
+.tab-hdr .tab-btn{padding:7px 14px;border-radius:8px;cursor:pointer;font-size:.78rem;color:var(--text2);transition:.3s;border:none;background:none}
+.tab-hdr .tab-btn:hover{color:var(--text)}.tab-hdr .tab-btn.active{background:linear-gradient(135deg,var(--accent),var(--accent2));color:#fff;font-weight:600}
+.alert-item{display:flex;align-items:flex-start;padding:12px 16px;border-bottom:1px solid rgba(255,255,255,.03);gap:12px;cursor:pointer;transition:.2s}
+.alert-item:hover{background:rgba(0,184,148,.03)}
+.alert-icon{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:.9rem;flex-shrink:0}
+.alert-item .alert-body{flex:1}.alert-item .alert-body .alert-title{font-size:.85rem;font-weight:500}
+.alert-item .alert-body .alert-msg{font-size:.78rem;color:var(--text2);margin-top:2px}
+.alert-item .alert-time{font-size:.7rem;color:var(--text2);white-space:nowrap}
+.toggle{position:relative;width:40px;height:22px;background:var(--border);border-radius:11px;cursor:pointer;transition:.3s;display:inline-block;flex-shrink:0}
+.toggle.on{background:var(--accent)}.toggle::after{content:'';position:absolute;width:18px;height:18px;border-radius:50%;background:#fff;top:2px;left:2px;transition:.3s}
+.toggle.on::after{left:20px}
+@media(max-width:768px){
+.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}
+.main{margin-left:0}.sidebar-toggle{display:block}
+.stats-grid,.form-row{grid-template-columns:repeat(2,1fr)}
+.rc-grid,.form-row-3{grid-template-columns:repeat(2,1fr)}
+.topbar{padding:10px 14px}.page-content{padding:14px}
+.schedule-grid{grid-template-columns:repeat(5,1fr)}
+}
+.stat-val[data-count]{counter-reset:num attr(data-count num, decimal)}
+</style></head><body>
+<div class="toast-container" id="tC"></div>
+<div class="modal-overlay" id="mO" onclick="if(event.target===this)closeModal()"><div class="modal" id="mBody"></div></div>
+
+<div class="login-wrapper" id="lW">
+<div class="orb"></div><div class="orb"></div><div class="orb"></div>
+<div class="login-box"><h2>Parental Control v3</h2>
+<div class="login-tabs"><div class="login-tab active" onclick="swL('login')">Login</div><div class="login-tab" onclick="swL('register')">Register</div></div>
+<form id="loginForm" onsubmit="hLogin(event)">
+<div class="form-g"><label>Email</label><input type="email" id="lEmail" required placeholder="admin@example.com"></div>
+<div class="form-g"><label>Password</label><input type="password" id="lPass" required placeholder="Password"></div>
+<button type="submit" class="btn btn-p" id="lBtn" style="width:100%">Sign In</button>
+</form>
+<form id="regForm" style="display:none" onsubmit="hReg(event)">
+<div class="form-g"><label>Name</label><input type="text" id="rName" required placeholder="Your name"></div>
+<div class="form-g"><label>Email</label><input type="email" id="rEmail" required placeholder="admin@example.com"></div>
+<div class="form-g"><label>Password</label><input type="password" id="rPass" required minlength="6" placeholder="Min 6 characters"></div>
+<button type="submit" class="btn btn-p" id="rBtn" style="width:100%">Create Account</button>
+</form></div></div>
+
+<div class="app-wrapper" id="aW">
+<aside class="sidebar" id="sb">
+<div class="sidebar-logo" onclick="navigateTo('dashboard')">PC v3</div>
+<nav class="sidebar-nav" id="sNav">
+<div class="nav-group">Overview</div>
+<a class="nav-l active" onclick="navigateTo('dashboard')"><span class="ico">&#9783;</span>Dashboard</a>
+<a class="nav-l" onclick="navigateTo('alerts')"><span class="ico">&#9888;</span>Alerts <span id="alertBadge" style="margin-left:auto;background:var(--danger);color:#fff;border-radius:10px;padding:0 6px;font-size:.7rem;display:none">0</span></a>
+<div class="nav-group">Communications</div>
+<a class="nav-l" onclick="navigateTo('sms')"><span class="ico">&#9993;</span>SMS / MMS</a>
+<a class="nav-l" onclick="navigateTo('calls')"><span class="ico">&#9742;</span>Call Logs</a>
+<a class="nav-l" onclick="navigateTo('chat')"><span class="ico">&#9787;</span>Social &amp; IM</a>
+<a class="nav-l" onclick="navigateTo('contacts')"><span class="ico">&#9783;</span>Contacts</a>
+<div class="nav-group">Tracking</div>
+<a class="nav-l" onclick="navigateTo('locations')"><span class="ico">&#9776;</span>GPS Tracking</a>
+<a class="nav-l" onclick="navigateTo('geofence')"><span class="ico">&#9632;</span>Geofence Zones</a>
+<a class="nav-l" onclick="navigateTo('sim')"><span class="ico">&#9881;</span>SIM Info</a>
+<div class="nav-group">Device Data</div>
+<a class="nav-l" onclick="navigateTo('apps')"><span class="ico">&#9783;</span>Applications</a>
+<a class="nav-l" onclick="navigateTo('browser')"><span class="ico">&#9733;</span>Browser History</a>
+<a class="nav-l" onclick="navigateTo('pictures')"><span class="ico">&#9785;</span>Media Gallery</a>
+<a class="nav-l" onclick="navigateTo('calendar')"><span class="ico">&#9734;</span>Calendar</a>
+<a class="nav-l" onclick="navigateTo('files')"><span class="ico">&#9776;</span>File Explorer</a>
+<div class="nav-group">Control</div>
+<a class="nav-l" onclick="navigateTo('remote')"><span class="ico">&#9881;</span>Remote Control</a>
+<a class="nav-l" onclick="navigateTo('commands')"><span class="ico">&#9889;</span>SMS Commands</a>
+<a class="nav-l" onclick="navigateTo('schedule')"><span class="ico">&#9776;</span>Schedule Restrict</a>
+<a class="nav-l" onclick="navigateTo('live')"><span class="ico">&#9785;</span>Live View</a>
+<div class="nav-group">Analytics</div>
+<a class="nav-l" onclick="navigateTo('statistics')"><span class="ico">&#9776;</span>Statistics</a>
+<a class="nav-l" onclick="navigateTo('reports')"><span class="ico">&#9776;</span>Reports</a>
+<div class="nav-group">Settings</div>
+<a class="nav-l" onclick="navigateTo('account')"><span class="ico">&#9881;</span>Account</a>
+</nav>
+<div class="sidebar-footer"><span class="dot" id="statusDot"></span><span id="deviceStatus">No device</span></div>
+</aside>
+
+<main class="main">
+<header class="topbar">
+<div class="topbar-left"><button class="sidebar-toggle" onclick="document.getElementById('sb').classList.toggle('open')">&#9776;</button><h1 id="pageTitle">Dashboard</h1></div>
+<div class="topbar-right">
+<select id="deviceSelect" onchange="swDevice()"><option value="">Select Device</option></select>
+<button class="btn-icon" onclick="refreshAll()" title="Refresh">&#8635;</button>
+<button class="btn-icon" onclick="toggleSocket()" title="Real-time" id="socketBtn">&#9679;</button>
+<div class="user-chip" id="userChip">Admin</div>
+<button class="btn-icon" onclick="handleLogout()" title="Sign Out">&#10005;</button>
+</div></header>
+
+<div class="page-content active" id="p-dashboard"><div class="stats-grid" id="dashStats"></div>
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))" id="dashExtraStats"></div>
+<div class="chart-c"><h3>Recent Activity</h3><div id="recentActivity"><div class="empty-state"><p>No recent activity</p></div></div></div>
+<div class="stats-grid" id="dashQuickActions" style="grid-template-columns:repeat(auto-fill,minmax(240px,1fr))"></div></div>
+
+<div class="page-content" id="p-alerts"><div class="tc-header" style="display:flex;align-items:center;justify-content:space-between;padding:14px 18px;border:1px solid var(--border);border-radius:12px 12px 0 0;background:var(--card)"><h3>&#9888; Alerts</h3><button class="btn btn-sm btn-gh" onclick="loadAlerts()">&#8635;</button></div>
+<div id="alertList" style="background:var(--card);border:1px solid var(--border);border-radius:0 0 12px 12px;border-top:none"><div class="empty-state"><p>No alerts</p></div></div></div>
+
+<div class="page-content" id="p-sms">
+<div class="tab-hdr" id="smsTabs"><button class="tab-btn active" onclick="switchSmsTab('sms',this)">SMS</button><button class="tab-btn" onclick="switchSmsTab('mms',this)">MMS</button><button class="tab-btn" onclick="switchSmsTab('blocked',this)">Blocked Numbers</button></div>
+<div id="smsContent"><div class="table-card"><div class="tc-header"><h3>SMS Messages</h3><input type="text" placeholder="Filter..." oninput="filterTbl(this.value,'smsTbl')"><button class="btn btn-sm btn-gh" onclick="loadSms()">&#8635;</button></div>
+<div class="tc-body" id="smsList"><div class="spinner"></div></div></div></div>
+<div id="mmsContent" style="display:none"><div class="table-card"><div class="tc-header"><h3>MMS Messages</h3><input type="text" placeholder="Filter..." oninput="filterTbl(this.value,'mmsTbl')"><button class="btn btn-sm btn-gh" onclick="loadMms()">&#8635;</button></div>
+<div class="tc-body" id="mmsList"><div class="spinner"></div></div></div></div>
+<div id="blockedContent" style="display:none"><div class="table-card"><div class="tc-header"><h3>Blocked Numbers</h3><button class="btn btn-sm btn-p" onclick="addBlocked()">+ Block Number</button></div>
+<div class="tc-body" id="blockedList"><div class="spinner"></div></div></div></div></div>
+
+<div class="page-content" id="p-calls"><div class="table-card"><div class="tc-header"><h3>Call Logs</h3><input type="text" placeholder="Filter..." oninput="filterTbl(this.value,'callsTbl')"><button class="btn btn-sm btn-gh" onclick="loadCalls()">&#8635;</button></div>
+<div class="tc-body" id="callsList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-chat">
+<div class="im-tabs" id="imTabs"></div>
+<div class="table-card"><div class="tc-header"><h3 id="chatTitle">Messages</h3><input type="text" placeholder="Filter..." oninput="filterChat(this.value)"></div>
+<div class="tc-body chat-list" id="chatList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-contacts"><div class="table-card"><div class="tc-header"><h3>&#9783; Contacts</h3><input type="text" placeholder="Filter..." oninput="filterTbl(this.value,'contactsTbl')"><button class="btn btn-sm btn-gh" onclick="loadContacts()">&#8635;</button></div>
+<div class="tc-body" id="contactsList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-locations">
+<div id="mapId"></div>
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))"><div class="stat-card"><div class="stat-val" id="locCount">0</div><div class="stat-lbl">Total Locations</div></div>
+<div class="stat-card"><div class="stat-val" id="locLatest">--</div><div class="stat-lbl">Last Update</div></div>
+<div class="stat-card"><div class="stat-val" id="locAccuracy">--</div><div class="stat-lbl">Accuracy</div></div></div>
+<div class="table-card"><div class="tc-header"><h3>Location History</h3><input type="text" placeholder="Filter date..." oninput="filterTbl(this.value,'locTbl')"><button class="btn btn-sm btn-s" onclick="exportLocations()">Export CSV</button></div>
+<div class="tc-body" id="locList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-geofence">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(160px,1fr))" id="gfStats"></div>
+<div class="table-card"><div class="tc-header"><h3>&#9632; Geofence Zones</h3><button class="btn btn-sm btn-p" onclick="addGeofence()">+ Add Zone</button></div>
+<div class="tc-body" id="gfList"><div class="spinner"></div></div></div>
+<div class="table-card"><div class="tc-header"><h3>Geofence Alerts</h3></div>
+<div class="tc-body" id="gfAlerts"><div class="empty-state"><p>No alerts</p></div></div></div></div>
+
+<div class="page-content" id="p-sim"><div class="table-card"><div class="tc-header"><h3>&#9881; SIM Card Info</h3></div>
+<div class="tc-body" id="simList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-apps">
+<div class="tab-hdr" id="appTabs"><button class="tab-btn active" onclick="swAppTab('all',this)">All Apps</button><button class="tab-btn" onclick="swAppTab('blocked',this)">Blocked</button><button class="tab-btn" onclick="swAppTab('system',this)">System</button></div>
+<div class="table-card"><div class="tc-header"><h3>Installed Applications</h3><input type="text" placeholder="Filter apps..." oninput="filterTbl(this.value,'appTbl')"><button class="btn btn-sm btn-gh" onclick="loadApps()">&#8635;</button></div>
+<div class="tc-body" id="appList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-browser"><div class="table-card"><div class="tc-header"><h3>&#9733; Browser History</h3><input type="text" placeholder="Filter sites..." oninput="filterTbl(this.value,'browserTbl')"><button class="btn btn-sm btn-gh" onclick="loadBrowser()">&#8635;</button></div>
+<div class="tc-body" id="browserList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-pictures">
+<div class="tab-hdr" id="picTabs"><button class="tab-btn active" onclick="swPicTab('pictures',this)">Pictures</button><button class="tab-btn" onclick="swPicTab('screenshots',this)">Screenshots</button></div>
+<div id="picContent"><div class="table-card"><div class="tc-header"><h3>&#9785; Media Gallery</h3></div>
+<div class="tc-body"><div class="pic-g" id="picGrid"><div class="spinner"></div></div></div></div></div>
+<div id="ssContent" style="display:none"><div class="table-card"><div class="tc-header"><h3>Screenshots</h3></div>
+<div class="tc-body"><div class="pic-g" id="ssGrid"><div class="spinner"></div></div></div></div></div></div>
+
+<div class="page-content" id="p-calendar">
+<div class="cal-nav"><button class="btn btn-sm btn-gh" onclick="chMonth(-1)">&#9664; Prev</button><h3 id="calTitle">Calendar</h3><button class="btn btn-sm btn-gh" onclick="chMonth(1)">Next &#9654;</button></div>
+<div class="table-card"><div class="tc-header"><h3>Events</h3></div>
+<div class="tc-body" style="padding:14px"><div class="cal-grid" id="calGrid"></div></div></div>
+<div class="table-card"><div class="tc-header"><h3>Event Details</h3></div>
+<div class="tc-body" id="calEvents"><div class="empty-state"><p>Select a date</p></div></div></div></div>
+
+<div class="page-content" id="p-files">
+<div class="fe-t"><button class="btn btn-sm btn-gh" onclick="feBack()">&#9664; Back</button>
+<input type="text" id="fePath" value="/" readonly>
+<button class="btn btn-sm btn-s" onclick="loadFiles(fePath.value)">Go</button></div>
+<div id="feList"><div class="spinner"></div></div></div>
+
+<div class="page-content" id="p-commands"><div class="table-card"><div class="tc-header"><h3>SMS Commands</h3><button class="btn btn-sm btn-p" onclick="addSmsCmd()">+ Send Command</button></div>
+<div class="tc-body" id="cmdList"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-remote">
+<div class="rc-grid" id="rcGrid"></div>
+<div class="table-card"><div class="tc-header"><h3>Command History</h3><button class="btn btn-sm btn-gh" onclick="loadCmdHist()">&#8635;</button></div>
+<div class="tc-body" id="cmdHist"><div class="empty-state"><p>No commands yet</p></div></div></div></div>
+
+<div class="page-content" id="p-schedule">
+<div class="table-card" style="margin-bottom:14px"><div class="tc-header"><h3>&#9776; Usage Schedule</h3><button class="btn btn-sm btn-p" onclick="addSched()">+ Add Rule</button></div>
+<div class="tc-body" style="padding:14px"><div class="schedule-grid" id="schedGrid"></div></div></div>
+<div class="table-card"><div class="tc-header"><h3>Schedule Rules</h3></div>
+<div class="tc-body" id="schedRules"><div class="spinner"></div></div></div></div>
+
+<div class="page-content" id="p-live">
+<div class="lv-p"><div class="lv-preview" id="lvPreview"><span>Camera preview</span></div>
+<div class="lv-ctrls">
+<button class="btn btn-p" id="lvBtn" onclick="toggleLV()">Start Live View</button>
+<button class="btn btn-s" onclick="rcSend('take_picture',{camera:'front'})">Front Cam</button>
+<button class="btn btn-s" onclick="rcSend('take_picture',{camera:'rear'})">Back Cam</button>
+<button class="btn btn-gh" onclick="rcSend('ambient_record',{duration:30})">Ambient (30s)</button>
+</div></div>
+<div class="table-card" style="margin-top:14px"><div class="tc-header"><h3>Live Session History</h3></div>
+<div class="tc-body" id="lvHist"><div class="empty-state"><p>No sessions</p></div></div></div></div>
+
+<div class="page-content" id="p-statistics">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(150px,1fr))" id="statHeader"></div>
+<div class="chart-c"><h3>SMS per Day</h3><canvas id="smsChart"></canvas></div>
+<div class="chart-c"><h3>Calls per Day</h3><canvas id="callsChart"></canvas></div>
+<div class="chart-c"><h3>Screen Time (Last 7 Days)</h3><canvas id="screenChart"></canvas></div>
+<div class="chart-c"><h3>App Usage (Top 10)</h3><canvas id="appChart"></canvas></div></div>
+
+<div class="page-content" id="p-reports">
+<div class="stats-grid" style="grid-template-columns:repeat(auto-fill,minmax(220px,1fr))">
+<div class="stat-card" style="cursor:pointer" onclick="genReport('pdf')"><div class="stat-icon" style="background:rgba(255,71,87,.15);color:var(--danger)">&#9776;</div><div class="stat-val" style="font-size:1rem">PDF Report</div><div class="stat-lbl">Export full device report as PDF</div></div>
+<div class="stat-card" style="cursor:pointer" onclick="genReport('excel')"><div class="stat-icon" style="background:rgba(0,184,148,.15);color:var(--accent)">&#9776;</div><div class="stat-val" style="font-size:1rem">Excel Report</div><div class="stat-lbl">Export data as Excel spreadsheet</div></div>
+<div class="stat-card" style="cursor:pointer" onclick="genReport('csv')"><div class="stat-icon" style="background:rgba(55,66,250,.15);color:var(--accent2)">&#9776;</div><div class="stat-val" style="font-size:1rem">CSV Export</div><div class="stat-lbl">Export all data as CSV file</div></div>
+<div class="stat-card" style="cursor:pointer" onclick="genReport('html')"><div class="stat-icon" style="background:rgba(108,92,231,.15);color:#6c5ce7">&#9776;</div><div class="stat-val" style="font-size:1rem">HTML Summary</div><div class="stat-lbl">Generate detailed HTML report</div></div>
+</div>
+<div class="chart-c"><h3>Report Preview</h3><div id="reportPreview"><div class="empty-state"><p>Click a report type to generate</p></div></div></div></div>
+
+<div class="page-content" id="p-account">
+<div class="acc-s"><h3>Profile</h3>
+<div class="form-row"><div class="form-g"><label>Name</label><input type="text" id="acctName"></div>
+<div class="form-g"><label>Email</label><input type="email" id="acctEmail"></div></div>
+<button class="btn btn-p" style="width:auto" onclick="updProfile()">Update Profile</button></div>
+<div class="acc-s"><h3>Change Password</h3>
+<div class="form-row"><div class="form-g"><label>Current Password</label><input type="password" id="acctCur"></div>
+<div class="form-g"><label>New Password</label><input type="password" id="acctNew"></div></div>
+<button class="btn btn-p" style="width:auto" onclick="chPwd()">Change Password</button></div>
+<div class="acc-s"><h3>Device Settings</h3>
+<div id="acctDeviceSettings"><div class="empty-state"><p>Select a device to configure</p></div></div></div>
+<div class="acc-s"><h3>Actions</h3>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-d" onclick="handleLogout()">Sign Out</button>
+<button class="btn btn-gh" onclick="genReport('csv')">Export Data</button>
+<button class="btn btn-gh" onclick="clearAllData()">Clear Device Data</button>
+</div></div></div>
+
+</main></div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+const API=location.protocol+'//'+location.hostname+':3000/api';
+const WS=location.protocol==='https:'?'wss':'ws'+'://'+location.hostname+':3000';
+const COLS=['#00b894','#3742fa','#ff4757','#ffa502','#6c5ce7','#00cec9','#ff6b81','#2ed573','#fd79a8','#e17055','#00b894','#0984e3','#fdcb6e','#e84393'];
+let CP='dashboard',DID='',RI=null,TOK=localStorage.getItem('token')||'',sock=null,sockConn=false,appData=[],calData=[],calY=new Date().getFullYear(),calM=new Date().getMonth(),charts={};
+const IM=['WhatsApp','Telegram','Messenger','Instagram','Snapchat','Signal','Discord','Skype','Viber','WeChat','Line','Kik','QQ','Threema','Wire','IMO','Hike','Tango','Gmail','YouTube','Facebook','Twitter','LinkedIn','Pinterest','Reddit','TikTok','Weibo'];
+
+function q(s){return document.querySelector(s)}
+function qi(s){return document.getElementById(s)}
+function qAll(s){return document.querySelectorAll(s)}
+function hd(e){return{'Content-Type':'application/json','Authorization':'Bearer '+TOK,...e}}
+
+async function api(ep,opts={}){
+  try{
+    const r=await fetch(API+ep,{...opts,headers:hd(opts.headers||{})});
+    if(r.status===401){handleLogout();return null}
+    if(!r.ok){const e=await r.json().catch(()=>({}));throw new Error(e.error||r.statusText)}
+    return await r.json();
+  }catch(e){console.error('API:',ep,e.message);return null}
+}
+
+function toast(m,t='i'){const c=qi('tC'),el=document.createElement('div');el.className='toast toast-'+t;el.textContent=m;c.appendChild(el);setTimeout(()=>{el.style.opacity='0';el.style.transform='translateX(20px)';setTimeout(()=>el.remove(),300)},3000)}
+function modal(title,body,onCnf){
+  qi('mBody').innerHTML=`<h3>${title}</h3><div>${body}</div><div class="modal-actions"><button class="btn btn-sm btn-gh" onclick="closeModal()">Cancel</button><button class="btn btn-sm btn-p" id="mCnf">Confirm</button></div>`;
+  qi('mO').classList.add('show');
+  qi('mCnf').onclick=()=>{closeModal();if(onCnf)onCnf()};
+}
+function closeModal(){qi('mO').classList.remove('show')}
+
+function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML}
+function ago(t){if(!t)return'';const d=new Date(t),n=Date.now(),s=Math.floor((n-d)/1000);if(s<60)return s+'s ago';if(s<3600)return Math.floor(s/60)+'m ago';if(s<86400)return Math.floor(s/3600)+'h ago';return Math.floor(s/86400)+'d ago'}
+function fmtDate(t){if(!t)return'';try{return new Date(t).toLocaleString()}catch{return t}}
+function shortId(s){return s?s.substring(0,8)+'...':''}
+
+function filterTbl(q,id){
+  const rows=document.getElementById(id)?.querySelectorAll('tbody tr')||[];
+  rows.forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(q.toLowerCase())?'':'none'});
+}
+function filterChat(q){
+  const els=qi('chatList').querySelectorAll('.chat-b');
+  els.forEach(el=>{el.style.display=el.textContent.toLowerCase().includes(q.toLowerCase())?'block':'none'});
+}
+
+function swL(t){
+  qAll('.login-tab').forEach((el,i)=>{el.classList.toggle('active',(i===0&&t==='login')||(i===1&&t==='register'))});
+  qi('loginForm').style.display=t==='login'?'block':'none';
+  qi('regForm').style.display=t==='register'?'block':'none';
+}
+
+async function hLogin(e){
+  e.preventDefault();const btn=qi('lBtn');btn.textContent='Signing in...';btn.disabled=true;
+  const d=await api('/auth/login',{method:'POST',body:JSON.stringify({email:qi('lEmail').value,password:qi('lPass').value})});
+  btn.textContent='Sign In';btn.disabled=false;
+  if(d&&d.token){TOK=d.token;localStorage.setItem('token',TOK);if(d.user)localStorage.setItem('user',JSON.stringify(d.user));showApp()}
+  else toast('Login failed','e');
+}
+async function hReg(e){
+  e.preventDefault();const btn=qi('rBtn');btn.textContent='Creating...';btn.disabled=true;
+  const d=await api('/auth/register',{method:'POST',body:JSON.stringify({fullName:qi('rName').value,email:qi('rEmail').value,password:qi('rPass').value})});
+  btn.textContent='Create Account';btn.disabled=false;
+  if(d&&d.token){TOK=d.token;localStorage.setItem('token',TOK);if(d.user)localStorage.setItem('user',JSON.stringify(d.user));showApp()}
+  else toast('Registration failed','e');
+}
+function handleLogout(){localStorage.removeItem('token');localStorage.removeItem('user');if(sock){sock.close()}location.reload()}
+
+function showApp(){
+  qi('lW').style.display='none';qi('aW').style.display='block';
+  const u=JSON.parse(localStorage.getItem('user')||'{}');
+  qi('userChip').textContent=u.full_name||u.name||u.email||'Admin';
+  qi('acctName').value=u.full_name||u.name||'';
+  qi('acctEmail').value=u.email||'';
+  initData();
+}
+
+function navigateTo(pg){
+  CP=pg;
+  qAll('.page-content').forEach(p=>p.classList.remove('active'));
+  const el=qi('p-'+pg);if(el)el.classList.add('active');
+  const titles={dashboard:'Dashboard',alerts:'Alerts',sms:'SMS/MMS',calls:'Call Logs',chat:'Social & IM',contacts:'Contacts',locations:'GPS Tracking',geofence:'Geofence Zones',sim:'SIM Info',apps:'Applications',browser:'Browser History',pictures:'Media Gallery',calendar:'Calendar',files:'File Explorer',remote:'Remote Control',commands:'SMS Commands',schedule:'Schedule',live:'Live View',statistics:'Statistics',reports:'Reports',account:'Account'};
+  qi('pageTitle').textContent=titles[pg]||pg;
+  qAll('.nav-l').forEach(n=>n.classList.remove('active'));
+  const idx=['dashboard','alerts','sms','calls','chat','contacts','locations','geofence','sim','apps','browser','pictures','calendar','files','remote','commands','schedule','live','statistics','reports','account'].indexOf(pg);
+  if(idx>=0){const ls=qAll('.nav-l');if(ls[idx])ls[idx].classList.add('active')}
+  qi('sb').classList.remove('open');
+  loadPage(pg);
+}
+
+function toggleSocket(){
+  if(sockConn){sock.close();sockConn=false;qi('socketBtn').style.color='var(--text2)'}
+  else{connectSocket();qi('socketBtn').style.color='var(--accent)'}
+}
+
+function connectSocket(){
+  try{
+    sock=new WebSocket(WS.replace('ws','ws'));
+    sock.onopen=()=>{sockConn=true;qi('socketBtn').style.color='var(--success)';toast('Real-time connected','s')};
+    sock.onmessage=(e)=>{try{const d=JSON.parse(e.data);if(d.type==='update')refreshAll();if(d.type==='alert'){toast(d.message,'i');loadAlerts()}}catch{}};
+    sock.onclose=()=>{sockConn=false;qi('socketBtn').style.color='var(--text2)'};
+    sock.onerror=()=>{sock.close()};
+  }catch(e){}
+}
+
+function swDevice(){
+  DID=qi('deviceSelect').value;
+  qi('deviceStatus').textContent=DID?'Device: '+DID:'No device';
+  qi('statusDot').className='dot '+(DID?'on':'off');
+  refreshAll();
+}
+function refreshAll(){loadPage(CP)}
+function startAR(){if(RI)clearInterval(RI);RI=setInterval(refreshAll,15000)}
+
+async function initData(){
+  await loadDevices();
+  if(DID){loadPage('dashboard');startAR()}
+}
+
+async function loadDevices(){
+  const d=await api('/devices');
+  const sel=qi('deviceSelect');
+  sel.innerHTML='<option value="">Select Device</option>';
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  if(list.length>0){
+    list.forEach(dev=>{const o=document.createElement('option');o.value=dev.device_id;o.textContent=(dev.device_name||dev.device_model||'Device')+(dev.is_online?' [ON]':' [OFF]');if(o.value===DID)o.selected=true;sel.appendChild(o)});
+    if(!DID&&list.length>0){DID=list[0].device_id;sel.value=DID}
+  }
+  qi('deviceStatus').textContent=DID?'Online':'No device';
+  qi('statusDot').className='dot '+(DID?'on':'off');
+}
+
+// ==================== LOAD PAGES ====================
+function loadPage(pg){
+  switch(pg){
+    case'dashboard':loadDashboard();break;case'alerts':loadAlerts();break;
+    case'sms':loadSms();break;case'calls':loadCalls();break;
+    case'chat':loadChat();break;case'contacts':loadContacts();break;
+    case'locations':loadLocations();break;case'geofence':loadGeofence();break;
+    case'sim':loadSim();break;case'apps':loadApps();break;
+    case'browser':loadBrowser();break;case'pictures':loadPictures();break;
+    case'calendar':loadCalendar();break;case'files':loadFiles('/');break;
+    case'commands':loadSmsCommands();break;case'remote':loadCmdHist();loadRCGrid();break;
+    case'schedule':loadSchedule();break;case'live':loadLVHist();break;
+    case'statistics':loadStats();break;case'reports':break;
+    case'account':loadDeviceSettings();break;
+  }
+}
+
+// ==================== DASHBOARD ====================
+async function loadDashboard(){
+  if(!DID){qi('dashStats').innerHTML='<div class="stat-card"><div class="stat-val">Select a device</div><div class="stat-lbl">to view dashboard</div></div>';return}
+  const d=await api('/dashboard');
+  if(!d){qi('dashStats').innerHTML='<div class="stat-card"><div class="stat-val">No data</div><div class="stat-lbl">Connect a device first</div></div>';return}
+  const t=d.totals||d;
+  const items=[
+    {ico:'&#9993;',clr:COLS[0],lbl:'SMS',val:t.sms||0,id:'dsSms'},{ico:'&#9742;',clr:COLS[1],lbl:'Calls',val:t.calls||0,id:'dsCalls'},
+    {ico:'&#9776;',clr:COLS[2],lbl:'Locations',val:t.locations||0,id:'dsLocs'},{ico:'&#9783;',clr:COLS[3],lbl:'Apps',val:t.apps||0,id:'dsApps'},
+    {ico:'&#9783;',clr:COLS[4],lbl:'Contacts',val:t.contacts||0,id:'dsContacts'},{ico:'&#9785;',clr:COLS[5],lbl:'Pictures',val:t.pictures||0,id:'dsPics'},
+    {ico:'&#9787;',clr:COLS[6],lbl:'Chat Msgs',val:t.chatMessages||0,id:'dsChat'},{ico:'&#9733;',clr:COLS[7],lbl:'Browser',val:t.browserHistory||0,id:'dsBrowser'}
+  ];
+  qi('dashStats').innerHTML=items.map((s,i)=>`<div class="stat-card" style="animation-delay:${i*0.05}s"><div class="stat-icon" style="background:${s.clr}22;color:${s.clr}">${s.ico}</div><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`).join('');
+
+  const eitems=[
+    {val:t.mms||0,lbl:'MMS'},{val:t.screenshots||0,lbl:'Screenshots'},{val:t.calendarEvents||0,lbl:'Calendar'},{val:t.files||0,lbl:'Files'},
+    {val:t.geofenceZones||0,lbl:'Geofence'},{val:t.smsCommands||0,lbl:'SMS Cmds'},{val:t.simCards||0,lbl:'SIM Cards'},{val:(t.screenTimeToday||0)+'m',lbl:'Screen Today'}
+  ];
+  qi('dashExtraStats').innerHTML=eitems.map((s,i)=>`<div class="stat-card" style="animation-delay:${i*0.03}s"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`).join('');
+
+  const alerts=d.recentAlerts||[];
+  qi('recentActivity').innerHTML=alerts.length===0?'<div class="empty-state"><p>No recent activity</p></div>':
+    alerts.slice(0,10).map(a=>`<div class="list-item"><div class="av" style="background:${a.severity==='danger'?COLS[2]:a.severity==='warning'?COLS[3]:COLS[0]}22;color:${a.severity==='danger'?COLS[2]:a.severity==='warning'?COLS[3]:COLS[0]}">!</div><div class="info"><div class="nm">${a.title||'Alert'}</div><div class="dt">${a.message||''}</div></div><div class="meta">${ago(a.created_at)}</div></div>`).join('');
+
+  qi('dashQuickActions').innerHTML=[
+    {ico:'&#9783;',ttl:'Locate Device',desc:'Get current GPS position',act:"rcSend('get_location',{})",clr:COLS[0]},
+    {ico:'&#9881;',ttl:'Take Screenshot',desc:'Capture device screen remotely',act:"rcSend('screenshot',{})",clr:COLS[1]},
+    {ico:'&#9888;',ttl:'Lock Device',desc:'Lock screen immediately',act:"rcSend('lock_device',{})",clr:COLS[2]},
+    {ico:'&#9742;',ttl:'Make Ring',desc:'Ring device to find it',act:"rcSend('ring',{duration:15})",clr:COLS[3]},
+  ].map(qc=>`<div class="stat-card" style="cursor:pointer" onclick="${qc.act}"><div class="stat-icon" style="background:${qc.clr}22;color:${qc.clr}">${qc.ico}</div><div style="font-size:.9rem;font-weight:500">${qc.ttl}</div><div class="stat-lbl">${qc.desc}</div></div>`).join('');
+}
+
+// ==================== ALERTS ====================
+async function loadAlerts(){
+  if(!DID){qi('alertList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/alerts/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('alertList').innerHTML=list.length===0?'<div class="empty-state"><p>No alerts</p></div>':
+    list.map((a,i)=>`<div class="alert-item" style="animation-delay:${i*0.03}s;" onclick="markAlert('${a.id}')"><div class="alert-icon" style="background:${a.severity==='danger'?COLS[2]+'22':a.severity==='warning'?COLS[3]+'22':COLS[0]+'22'};color:${a.severity==='danger'?COLS[2]:a.severity==='warning'?COLS[3]:COLS[0]}">!</div><div class="alert-body"><div class="alert-title">${a.title||'Alert'} <span class="badge ${a.severity==='danger'?'badge-fail':a.severity==='warning'?'badge-pend':'badge-in'}">${a.alert_type||a.severity}</span></div><div class="alert-msg">${a.message||''}</div></div><div class="alert-time">${ago(a.created_at)}</div></div>`).join('');
+  const un=await api('/alerts/'+DID+'/unread');
+  if(un&&un.unread>0){qi('alertBadge').textContent=un.unread;qi('alertBadge').style.display='inline'}
+}
+async function markAlert(id){await api('/alerts/'+id+'/read',{method:'PUT'});loadAlerts()}
+
+// ==================== SMS ====================
+async function loadSms(){
+  if(!DID){qi('smsList').innerHTML='<div class="empty-state"><div class="empty-icon">&#9993;</div><p>Select a device</p></div>';return}
+  const d=await api('/sms/'+DID);
+  const list=d&&d.messages?d.messages:(Array.isArray(d)?d:[]);
+  qi('smsList').innerHTML=list.length===0?'<div class="empty-state"><div class="empty-icon">&#9993;</div><p>No messages</p></div>':
+    `<table id="smsTbl"><thead><tr><th>From</th><th>Message</th><th>Direction</th><th>Time</th></tr></thead><tbody>${
+      list.map(m=>`<tr><td>${escapeHtml(m.sender||m.from||'Unknown')}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(m.body||m.message||m.text||'')}</td><td><span class="badge ${m.direction==='incoming'?'badge-in':'badge-out'}">${m.direction||'incoming'}</span></td><td>${ago(m.timestamp)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+async function loadMms(){
+  if(!DID){qi('mmsList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/mms/'+DID);
+  const list=d&&d.messages?d.messages:(Array.isArray(d)?d:[]);
+  qi('mmsList').innerHTML=list.length===0?'<div class="empty-state"><p>No MMS messages</p></div>':
+    `<table id="mmsTbl"><thead><tr><th>From</th><th>Message</th><th>Media</th><th>Time</th></tr></thead><tbody>${
+      list.map(m=>`<tr><td>${escapeHtml(m.sender||m.from||'Unknown')}</td><td>${escapeHtml(m.body||'')}</td><td>${m.media_type||'-'}</td><td>${ago(m.timestamp)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+async function loadBlocked(){
+  if(!DID){qi('blockedList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/blocked/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  const tbody=list.map(b=>`<tr><td>${escapeHtml(b.phone_number)}</td><td>${escapeHtml(b.reason||'-')}</td><td><span class="badge ${b.block_calls?'badge-block':'badge-act'}">${b.block_calls?'Block':'Allow'}</span></td><td><span class="badge ${b.block_sms?'badge-block':'badge-act'}">${b.block_sms?'Block':'Allow'}</span></td><td><button class="btn btn-sm btn-d" onclick="unblock('${b.id}')">Unblock</button></td></tr>`).join('');
+  qi('blockedList').innerHTML=list.length===0?'<div class="empty-state"><p>No blocked numbers</p></div>':
+    `<table id="blockedTbl"><thead><tr><th>Number</th><th>Reason</th><th>Calls</th><th>SMS</th><th>Action</th></tr></thead><tbody>${tbody}</tbody></table>`;
+}
+async function unblock(id){await api('/blocked/'+id,{method:'DELETE'});loadBlocked();toast('Unblocked','s')}
+function addBlocked(){
+  modal('Block Number','<div class="form-g"><label>Phone Number</label><input type="text" id="blkNum" placeholder="+1234567890"></div><div class="form-g"><label>Reason</label><input type="text" id="blkReason" placeholder="Optional"></div><div class="form-row"><div class="form-g"><label><input type="checkbox" id="blkCalls" checked> Block Calls</label></div><div class="form-g"><label><input type="checkbox" id="blkSms" checked> Block SMS</label></div></div>',
+    async()=>{const n=qi('blkNum').value;if(!n){toast('Enter a number','e');return}await api('/blocked/'+DID,{method:'POST',body:JSON.stringify({phoneNumber:n,reason:qi('blkReason').value,blockCalls:qi('blkCalls').checked,blockSms:qi('blkSms').checked})});loadBlocked();toast('Number blocked','s')});
+}
+
+function switchSmsTab(t,el){
+  qAll('#smsTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  qi('smsContent').style.display=t==='sms'?'block':'none';
+  qi('mmsContent').style.display=t==='mms'?'block':'none';
+  qi('blockedContent').style.display=t==='blocked'?'block':'none';
+  if(t==='mms')loadMms();if(t==='blocked')loadBlocked();
+}
+
+// ==================== CALLS ====================
+async function loadCalls(){
+  if(!DID){qi('callsList').innerHTML='<div class="empty-state"><div class="empty-icon">&#9742;</div><p>Select a device</p></div>';return}
+  const d=await api('/calls/'+DID);
+  const list=d&&d.calls?d.calls:(Array.isArray(d)?d:[]);
+  qi('callsList').innerHTML=list.length===0?'<div class="empty-state"><div class="empty-icon">&#9742;</div><p>No calls</p></div>':
+    `<table id="callsTbl"><thead><tr><th>Contact</th><th>Number</th><th>Direction</th><th>Duration</th><th>Time</th></tr></thead><tbody>${
+      list.map(c=>{
+        const dir=c.direction||'incoming';
+        const badge=dir==='incoming'?'badge-in':dir==='outgoing'?'badge-out':'badge-miss';
+        const dur=c.duration?Math.floor(c.duration/60)+'m '+c.duration%60+'s':'-';
+        return`<tr><td>${escapeHtml(c.contact_name||c.name||'Unknown')}</td><td>${escapeHtml(c.phone_number||c.number||'')}</td><td><span class="badge ${badge}">${dir}</span></td><td>${dur}</td><td>${ago(c.timestamp)}</td></tr>`
+      }).join('')
+    }</tbody></table>`;
+}
+
+// ==================== CHAT ====================
+async function loadChat(platform){
+  platform=platform||'WhatsApp';
+  const tabs=qi('imTabs');
+  tabs.innerHTML=IM.map((p,i)=>`<div class="im-tab${i===0?' active':''}" onclick="swIM('${p}',this)">${p}</div>`);
+  qi('chatTitle').textContent=platform+' Messages';
+  if(!DID){qi('chatList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/chat/'+DID+'?app='+encodeURIComponent(platform));
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  if(list.length===0){qi('chatList').innerHTML='<div class="empty-state"><p>No messages for '+platform+'</p></div>';return}
+  qi('chatList').innerHTML=list.map((m,i)=>{
+    const sent=m.direction==='outgoing'||m.direction==='out';
+    return`<div class="chat-b ${sent?'sent':'recv'}" style="animation-delay:${i*0.03}s">${escapeHtml(m.message||m.text||m.body||'')}<div class="chat-m">${m.contact_name||m.sender||''} - ${ago(m.timestamp)}</div></div>`;
+  }).join('');
+  qi('chatList').scrollTop=qi('chatList').scrollHeight;
+}
+function swIM(p,el){
+  qAll('#imTabs .im-tab').forEach(t=>t.classList.remove('active'));
+  if(el)el.classList.add('active');
+  loadChat(p);
+}
+
+// ==================== CONTACTS ====================
+async function loadContacts(){
+  if(!DID){qi('contactsList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/contacts/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('contactsList').innerHTML=list.length===0?'<div class="empty-state"><p>No contacts</p></div>':
+    `<table id="contactsTbl"><thead><tr><th>Name</th><th>Number</th><th>Email</th><th>Group</th></tr></thead><tbody>${
+      list.map(c=>`<tr><td>${escapeHtml(c.name||'Unknown')}</td><td>${escapeHtml(c.phone_number||c.phone||'')}</td><td>${escapeHtml(c.email||'-')}</td><td>${c.group_name||'-'}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+// ==================== LOCATIONS ====================
+let map=null,markers=[],pathLine=null;
+async function loadLocations(){
+  if(!DID){qi('locList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/locations/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('locCount').textContent=list.length;
+  qi('locLatest').textContent=list.length>0?ago(list[0].timestamp):'--';
+  qi('locAccuracy').textContent=list.length>0&&list[0].accuracy?list[0].accuracy+'m':'--';
+
+  if(map){map.remove();map=null;markers=[]}
+  map=L.map('mapId').setView([20,0],2);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'©OSM',maxZoom:19}).addTo(map);
+
+  const pts=list.filter(p=>p.latitude&&p.longitude).map(p=>[parseFloat(p.latitude),parseFloat(p.longitude)]);
+  if(pts.length>0){
+    const latest=pts[0];
+    map.setView(latest,15);
+    L.marker(latest,{icon:L.divIcon({className:'',html:'<div style="background:#00b894;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,.3)"></div>',iconSize:[16,16],iconAnchor:[8,8]})}).addTo(map).bindPopup('<b>Latest</b><br>'+new Date(list[0].timestamp).toLocaleString());
+    if(pts.length>1){
+      const older=pts[pts.length-1];
+      L.marker(older,{icon:L.divIcon({className:'',html:'<div style="background:#ff4757;width:12px;height:12px;border-radius:50%;border:2px solid #fff;opacity:.7"></div>',iconSize:[12,12],iconAnchor:[6,6]})}).addTo(map);
+      pathLine=L.polyline(pts,{color:'#00b894',weight:2,opacity:.6,dashArray:'5,10'}).addTo(map);
+    }
+    pts.forEach((p,i)=>{
+      if(i===0||i===pts.length-1)return;
+      L.circle(p,{radius:3,color:'#3742fa',fillColor:'#3742fa',fillOpacity:.5}).addTo(map);
+    });
+  }
+
+  qi('locList').innerHTML=list.length===0?'<div class="empty-state"><p>No locations</p></div>':
+    `<table id="locTbl"><thead><tr><th>Latitude</th><th>Longitude</th><th>Accuracy</th><th>Speed</th><th>Time</th></tr></thead><tbody>${
+      list.map(l=>`<tr><td>${l.latitude||l.lat||'--'}</td><td>${l.longitude||l.lng||'--'}</td><td>${l.accuracy?l.accuracy+'m':'-'}</td><td>${l.speed?l.speed+'m/s':'-'}</td><td>${ago(l.timestamp)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+function exportLocations(){
+  if(!DID)return;
+  api('/locations/'+DID).then(d=>{
+    const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+    const csv=[['Latitude','Longitude','Accuracy','Speed','Timestamp']];
+    list.forEach(l=>csv.push([l.latitude||'',l.longitude||'',l.accuracy||'',l.speed||'',l.timestamp||'']));
+    const blob=new Blob([csv.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='locations_'+DID+'.csv';a.click();
+    toast('CSV exported','s');
+  });
+}
+
+// ==================== GEOFENCE ====================
+async function loadGeofence(){
+  if(!DID){qi('gfList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/geofence/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('gfStats').innerHTML=[
+    {val:list.length,lbl:'Zones'},
+    {val:list.filter(z=>z.is_active).length,lbl:'Active'},
+    {val:list.filter(z=>z.zone_type==='restricted').length,lbl:'Restricted'}
+  ].map((s,i)=>`<div class="stat-card"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`).join('');
+
+  qi('gfList').innerHTML=list.length===0?'<div class="empty-state"><p>No geofence zones</p></div>':
+    `<table><thead><tr><th>Name</th><th>Lat/Lng</th><th>Radius</th><th>Type</th><th>Active</th><th>Actions</th></tr></thead><tbody>${
+      list.map(z=>`<tr><td>${escapeHtml(z.name)}</td><td>${z.latitude},${z.longitude}</td><td>${z.radius_meters}m</td><td><span class="badge ${z.zone_type==='restricted'?'badge-fail':'badge-in'}">${z.zone_type}</span></td><td><div class="toggle ${z.is_active?'on':''}" onclick="togGF('${z.id}',${!z.is_active})"></div></td><td><button class="btn btn-sm btn-d" onclick="delGF('${z.id}')">Del</button></td></tr>`).join('')
+    }</tbody></table>`;
+
+  const al=await api('/geofence/'+DID+'/alerts');
+  const alist=Array.isArray(al)?al:(al&&al.value?al.value:[]);
+  qi('gfAlerts').innerHTML=alist.length===0?'<div class="empty-state"><p>No geofence alerts</p></div>':
+    alist.map(a=>`<div class="list-item"><div class="av" style="background:${a.event_type==='enter'?COLS[0]+'22':COLS[2]+'22'};color:${a.event_type==='enter'?COLS[0]:COLS[2]}">${a.event_type==='enter'?'&#9654;':'&#9664;'}</div><div class="info"><div class="nm">${a.event_type==='enter'?'Entered':'Left'} zone</div><div class="dt">${a.latitude},${a.longitude}</div></div><div class="meta">${ago(a.created_at)}</div></div>`).join('');
+}
+async function togGF(id,v){await api('/geofence/'+id,{method:'PUT',body:JSON.stringify({isActive:v})});loadGeofence()}
+async function delGF(id){await api('/geofence/'+id,{method:'DELETE'});loadGeofence();toast('Zone deleted','s')}
+function addGeofence(){
+  modal('Add Geofence Zone','<div class="form-g"><label>Name</label><input type="text" id="gfName" placeholder="Home, School, etc"></div><div class="form-row"><div class="form-g"><label>Latitude</label><input type="number" step="any" id="gfLat" placeholder="28.6139"></div><div class="form-g"><label>Longitude</label><input type="number" step="any" id="gfLng" placeholder="77.2090"></div></div><div class="form-row"><div class="form-g"><label>Radius (m)</label><input type="number" id="gfRad" value="100"></div><div class="form-g"><label>Type</label><select id="gfType"><option value="safe">Safe</option><option value="restricted">Restricted</option></select></div></div>',
+    async()=>{await api('/geofence/'+DID,{method:'POST',body:JSON.stringify({name:qi('gfName').value,latitude:parseFloat(qi('gfLat').value),longitude:parseFloat(qi('gfLng').value),radiusMeters:parseInt(qi('gfRad').value)||100,zoneType:qi('gfType').value})});loadGeofence();toast('Zone created','s')});
+}
+
+// ==================== SIM ====================
+async function loadSim(){
+  if(!DID){qi('simList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/sim/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('simList').innerHTML=list.length===0?'<div class="empty-state"><p>No SIM info</p></div>':
+    `<table><thead><tr><th>Slot</th><th>Number</th><th>Carrier</th><th>Network</th><th>Country</th><th>Active</th></tr></thead><tbody>${
+      list.map(s=>`<tr><td>SIM ${s.sim_slot+1}</td><td>${s.phone_number||'-'}</td><td>${s.carrier_name||'-'}</td><td>${s.network_type||'-'}</td><td>${s.country_code||'-'}</td><td><span class="badge ${s.is_active?'badge-in':'badge-fail'}">${s.is_active?'Active':'Inactive'}</span></td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+// ==================== APPS ====================
+async function loadApps(){
+  if(!DID){qi('appList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/apps/'+DID);
+  appData=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  renderApps('all');
+}
+function swAppTab(t,el){
+  qAll('#appTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  renderApps(t);
+}
+function renderApps(t){
+  const list=t==='all'?appData:t==='blocked'?appData.filter(a=>a.is_blocked):appData.filter(a=>a.is_system_app);
+  qi('appList').innerHTML=list.length===0?'<div class="empty-state"><p>No '+(t==='all'?'':' '+t)+' apps</p></div>':
+    `<table id="appTbl"><thead><tr><th>App Name</th><th>Package</th><th>Version</th><th>Status</th><th>Action</th></tr></thead><tbody>${
+      list.map(a=>`<tr><td>${escapeHtml(a.app_name||a.name||'Unknown')}</td><td style="font-size:.78rem;color:var(--text2)">${escapeHtml(a.package_name||a.package||'')}</td><td>${a.version_name||'-'}</td><td><span class="badge ${a.is_blocked?'badge-block':'badge-act'}">${a.is_blocked?'Blocked':'Active'}</span></td><td>${a.is_system_app?'System':`<button class="btn btn-sm ${a.is_blocked?'btn-s':'btn-d'}" onclick="togApp('${a.id}',${!a.is_blocked})">${a.is_blocked?'Unblock':'Block'}</button>`}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+async function togApp(id,block){await api('/apps/'+DID,{method:'PUT',body:JSON.stringify({appId:id,isBlocked:block})});loadApps();toast(block?'App blocked':'App unblocked','s')}
+
+// ==================== BROWSER ====================
+async function loadBrowser(){
+  if(!DID){qi('browserList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/browser/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('browserList').innerHTML=list.length===0?'<div class="empty-state"><p>No browser history</p></div>':
+    `<table id="browserTbl"><thead><tr><th>Title</th><th>URL</th><th>Visits</th><th>Last Visited</th></tr></thead><tbody>${
+      list.map(h=>`<tr><td>${escapeHtml(h.title||'Untitled')}</td><td style="max-width:300px;overflow:hidden;text-overflow:ellipsis"><a href="${escapeHtml(h.url)}" target="_blank" style="color:var(--accent);text-decoration:none;font-size:.8rem">${escapeHtml(h.url||'')}</a></td><td>${h.visit_count||1}</td><td>${ago(h.last_visited)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+
+// ==================== PICTURES ====================
+async function loadPictures(){
+  if(!DID){qi('picGrid').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/pictures/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('picGrid').innerHTML=list.length===0?'<div class="empty-state"><div class="empty-icon">&#9785;</div><p>No pictures</p></div>':
+    list.map(p=>`<div class="pic-t" onclick="showImg('${escapeHtml(p.image_url||'')}')"><img src="${p.image_url||'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y="50" font-size="50">&#9785;</text></svg>'}" alt="" loading="lazy"><div class="pic-over">${p.file_name||'Photo'}<br>${p.file_size?Math.round(p.file_size/1024)+'KB':''}</div></div>`).join('');
+}
+function swPicTab(t,el){
+  qAll('#picTabs .tab-btn').forEach(b=>b.classList.remove('active'));
+  if(el)el.classList.add('active');
+  qi('picContent').style.display=t==='pictures'?'block':'none';
+  qi('ssContent').style.display=t==='screenshots'?'block':'none';
+  if(t==='screenshots')loadScreenshots();
+}
+async function loadScreenshots(){
+  if(!DID){qi('ssGrid').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/screenshot/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('ssGrid').innerHTML=list.length===0?'<div class="empty-state"><p>No screenshots</p></div>':
+    list.map(s=>`<div class="pic-t" onclick="showImg('${escapeHtml(s.image_url||'')}')"><img src="${s.image_url||''}" alt="" loading="lazy"><div class="pic-over">${fmtDate(s.timestamp)}</div></div>`).join('');
+}
+function showImg(url){if(url)window.open(url,'_blank')}
+
+// ==================== CALENDAR ====================
+async function loadCalendar(){
+  if(!DID)return;
+  const d=await api('/calendar/'+DID);
+  calData=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  renderCal();
+}
+function renderCal(){
+  const g=qi('calGrid');if(!g)return;
+  const m=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  qi('calTitle').textContent=m[calM]+' '+calY;
+  const fd=new Date(calY,calM,1).getDay(),ld=new Date(calY,calM+1,0).getDate();
+  let html=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d=>`<div class="cal-hdr">${d}</div>`).join('');
+  for(let i=0;i<fd;i++)html+='<div class="cal-day empty"></div>';
+  const td=new Date();
+  for(let d=1;d<=ld;d++){
+    const isT=d===td.getDate()&&calM===td.getMonth()&&calY===td.getFullYear();
+    const ds=`${calY}-${String(calM+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const has=calData.some(e=>(e.start_time||e.date||'').includes(ds));
+    html+=`<div class="cal-day${isT?' today':''}" onclick="showCalEvents('${ds}')">${d}${has?'<div class="ev-dot"></div>':''}</div>`;
+  }
+  g.innerHTML=html;
+}
+function chMonth(d){calM+=d;if(calM>11){calM=0;calY++}if(calM<0){calM=11;calY--}renderCal()}
+function showCalEvents(ds){
+  const evs=calData.filter(e=>(e.start_time||e.date||'').includes(ds));
+  qi('calEvents').innerHTML=evs.length===0?'<div class="empty-state"><p>No events on this date</p></div>':
+    evs.map(e=>`<div class="list-item"><div class="av" style="background:${COLS[0]}22;color:${COLS[0]}">&#9734;</div><div class="info"><div class="nm">${escapeHtml(e.title||'Event')}</div><div class="dt">${e.location?escapeHtml(e.location):''} ${e.start_time?fmtDate(e.start_time):''}</div></div></div>`).join('');
+}
+
+// ==================== FILES ====================
+let fePath='/';
+async function loadFiles(path){
+  path=path||'/';fePath=path;qi('fePath').value=path;
+  if(!DID){qi('feList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/files/'+DID+'?path='+encodeURIComponent(path));
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('feList').innerHTML=list.length===0?'<div class="empty-state"><p>Empty directory</p></div>':
+    list.map((f,i)=>{
+      const isDir=f.is_directory||f.isDir;
+      const nm=f.file_name||f.name||'';
+      const sz=f.file_size?Math.round(f.file_size/1024)+'KB':'';
+      const click=isDir?`loadFiles('${(path==='/'?'':'/')+path+(path.endsWith('/')?'':'/')+nm}')`:`openFile('${escapeHtml(f.file_url||'')}')`;
+      return`<div class="fe-item" style="animation-delay:${i*0.02}s" onclick="${click}"><div class="fe-icon">${isDir?'&#128193;':'&#128196;'}</div><div class="fe-name">${escapeHtml(nm)}</div><div class="fe-size">${sz}</div></div>`;
+    }).join('');
+}
+function feBack(){const p=fePath.split('/').filter(Boolean);p.pop();loadFiles('/'+p.join('/'))}
+function openFile(url){if(url)window.open(url,'_blank')}
+
+// ==================== SMS COMMANDS ====================
+async function loadSmsCommands(){
+  if(!DID){qi('cmdList').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/sms-commands/'+DID);
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('cmdList').innerHTML=list.length===0?'<div class="empty-state"><p>No SMS commands</p></div>':
+    `<table><thead><tr><th>Command</th><th>Target</th><th>Status</th><th>Response</th><th>Time</th></tr></thead><tbody>${
+      list.map(c=>`<tr><td>${escapeHtml(c.command_text||'')}</td><td>${c.target_number||'-'}</td><td><span class="badge ${c.status==='executed'?'badge-in':c.status==='failed'?'badge-fail':'badge-pend'}">${c.status||'pending'}</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${escapeHtml(c.response||'-')}</td><td>${ago(c.created_at)}</td></tr>`).join('')
+    }</tbody></table>`;
+}
+function addSmsCmd(){
+  modal('Send SMS Command','<div class="form-g"><label>Command Text</label><input type="text" id="scCmd" placeholder="e.g. LOCATE, LOCK, ALARM"></div><div class="form-g"><label>Target Number (optional)</label><input type="text" id="scNum" placeholder="Phone number"></div>',
+    async()=>{const cmd=qi('scCmd').value;if(!cmd){toast('Enter a command','e');return}await api('/sms-commands/send',{method:'POST',body:JSON.stringify({deviceId:DID,commandText:cmd,targetNumber:qi('scNum').value})});loadSmsCommands();toast('Command sent','s')});
+}
+
+// ==================== REMOTE CONTROL ====================
+const RC_CMDS=[
+  {ico:'&#9776;',lbl:'Locate',sub:'Get GPS position',cmd:'get_location',p:{}},
+  {ico:'&#9785;',lbl:'Screenshot',sub:'Capture screen',cmd:'screenshot',p:{}},
+  {ico:'&#9881;',lbl:'Vibrate',sub:'5s vibration',cmd:'vibrate',p:{duration:5}},
+  {ico:'&#9742;',lbl:'Ring',sub:'15s alarm',cmd:'ring',p:{duration:15}},
+  {ico:'&#9888;',lbl:'Lock',sub:'Lock device',cmd:'lock_device',p:{}},
+  {ico:'&#9783;',lbl:'Unlock',sub:'Show app icon',cmd:'show_icon',p:{}},
+  {ico:'&#9993;',lbl:'Send SMS',sub:'Send from device',cmd:'send_sms',p:{number:'',message:''}},
+  {ico:'&#9787;',lbl:'Notification',sub:'Push notification',cmd:'send_notification',p:{title:'Alert',message:'Test'}},
+  {ico:'&#9889;',lbl:'Sync Data',sub:'Force data sync',cmd:'sync_data',p:{}},
+  {ico:'&#9733;',lbl:'Front Cam',sub:'Take front photo',cmd:'take_picture',p:{camera:'front'}},
+  {ico:'&#9785;',lbl:'Back Cam',sub:'Take rear photo',cmd:'take_picture',p:{camera:'rear'}},
+  {ico:'&#9776;',lbl:'WiFi On',sub:'Enable WiFi',cmd:'wifi_on',p:{}},
+  {ico:'&#9881;',lbl:'WiFi Off',sub:'Disable WiFi',cmd:'wifi_off',p:{}},
+  {ico:'&#9888;',lbl:'Restart',sub:'Reboot device',cmd:'restart',p:{}},
+  {ico:'&#10005;',lbl:'Wipe Data',sub:'Factory reset',cmd:'wipe',p:{}},
+  {ico:'&#9783;',lbl:'Popup Msg',sub:'Show popup on device',cmd:'popup_message',p:{title:'Admin',message:'Test message'}},
+  {ico:'&#9734;',lbl:'Record Audio',sub:'Ambient recording',cmd:'ambient_record',p:{duration:30}},
+  {ico:'&#9776;',lbl:'App Info',sub:'Get device/phone info',cmd:'device_info',p:{}},
+];
+
+function loadRCGrid(){
+  qi('rcGrid').innerHTML=RC_CMDS.map(c=>{
+    const hasParams=JSON.stringify(c.p)!=='{}';
+    const onclick=hasParams?`rcWithParams('${c.cmd}')`: `rcSend('${c.cmd}',${JSON.stringify(c.p).replace(/"/g,"'")})`;
+    return`<div class="rc-card" onclick="${onclick}"><div class="rc-icon">${c.ico}</div><div class="rc-lbl">${c.lbl}</div><div class="rc-sub">${c.sub}</div></div>`;
+  }).join('');
+}
+
+async function rcSend(cmd,params){
+  if(!DID){toast('Select a device first','e');return}
+  toast('Sending: '+cmd,'i');
+  const d=await api('/remote/command',{method:'POST',body:JSON.stringify({deviceId:DID,command:cmd,params:params||{}})});
+  if(d)toast(cmd+' command sent','s');else toast('Command failed','e');
+  loadCmdHist();
+}
+
+function rcWithParams(cmd){
+  let body='';
+  if(cmd==='send_sms')body='<div class="form-g"><label>Number</label><input type="text" id="rpNum" placeholder="+1234567890"></div><div class="form-g"><label>Message</label><textarea id="rpMsg" placeholder="Message text"></textarea></div>';
+  else if(cmd==='send_notification')body='<div class="form-g"><label>Title</label><input type="text" id="rpTtl" value="Alert"></div><div class="form-g"><label>Message</label><input type="text" id="rpMsg" value="Test notification"></div>';
+  else if(cmd==='popup_message')body='<div class="form-g"><label>Title</label><input type="text" id="rpTtl" value="Admin"></div><div class="form-g"><label>Message</label><textarea id="rpMsg" placeholder="Popup text"></textarea></div>';
+  else if(cmd==='vibrate'||cmd==='ring'||cmd==='ambient_record')body='<div class="form-g"><label>Duration (seconds)</label><input type="number" id="rpDur" value="10"></div>';
+  else body='<p>No additional parameters needed</p>';
+
+  modal('Send: '+cmd,body,async()=>{
+    let params={};
+    const num=qi('rpNum')?.value;const msg=qi('rpMsg')?.value;const ttl=qi('rpTtl')?.value;const dur=qi('rpDur')?.value;
+    if(num)params.number=num;if(msg)params.message=msg;if(ttl)params.title=ttl;if(dur)params.duration=parseInt(dur);
+    await rcSend(cmd,params);
+  });
+}
+
+async function loadCmdHist(){
+  if(!DID){qi('cmdHist').innerHTML='<div class="empty-state"><p>Select a device first</p></div>';return}
+  const d=await api('/remote/history/'+DID+'?limit=30');
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('cmdHist').innerHTML=list.length===0?'<div class="empty-state"><p>No commands</p></div>':
+    `<table><thead><tr><th>Command</th><th>Status</th><th>Result</th><th>Time</th></tr></thead><tbody>${
+      list.map(c=>{
+        const st=c.status||'pending';
+        const bg=st==='executed'?'badge-in':st==='failed'?'badge-fail':st==='sent'?'badge-pend':'badge-pend';
+        return`<tr><td>${escapeHtml(c.command)}</td><td><span class="badge ${bg}">${st}</span></td><td style="max-width:200px;overflow:hidden;text-overflow:ellipsis">${c.result?JSON.stringify(c.result).substring(0,60):'-'}</td><td>${ago(c.created_at)}</td></tr>`
+      }).join('')
+    }</tbody></table>`;
+}
+
+// ==================== SCHEDULE ====================
+async function loadSchedule(){
+  if(!DID){qi('schedGrid').innerHTML='';qi('schedRules').innerHTML='<div class="empty-state"><p>Select a device</p></div>';return}
+  const d=await api('/schedule/'+DID);
+  const rules=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  const hours=['6AM','7','8','9','10','11','12PM','1','2','3','4','5','6PM','7','8','9','10','11PM'];
+  const days=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  let html=hours.map((h,i)=>`<div class="sh-header">${h}</div>`).join('');
+  days.forEach((day,di)=>{
+    html+=`<div class="sh-header">${day}</div>`;
+    hours.forEach((h,hi)=>{
+      const blocked=rules.some(r=>r.day_of_week===di&&r.start_time<=String(hi+6).padStart(2,'0')+':00'&&r.end_time>=String(hi+6).padStart(2,'0')+':00');
+      html+=`<div class="sh-cell ${blocked?'blocked':'allowed'}">${blocked?'&#10005;':'&#10003;'}</div>`;
+    });
+  });
+  qi('schedGrid').innerHTML=html;
+  qi('schedRules').innerHTML=rules.length===0?'<div class="empty-state"><p>No schedule rules</p></div>':
+    rules.map((r,i)=>`<div class="list-item"><div class="av" style="background:${COLS[i%COLS.length]}22;color:${COLS[i%COLS.length]}">&#9776;</div><div class="info"><div class="nm">${days[r.day_of_week]||'Day '+r.day_of_week}: ${r.start_time}-${r.end_time}</div><div class="dt">${r.restriction_type||'screen_time'} ${r.is_active?'':'[Disabled]'}</div></div><button class="btn btn-sm btn-d" onclick="delSched('${r.id}')">Del</button></div>`).join('');
+}
+function delSched(id){api('/schedule/'+id,{method:'DELETE'});loadSchedule();toast('Rule deleted','s')}
+function addSched(){
+  modal('Add Schedule Rule','<div class="form-row"><div class="form-g"><label>Day</label><select id="sDay"><option value="0">Sun</option><option value="1" selected>Mon</option><option value="2">Tue</option><option value="3">Wed</option><option value="4">Thu</option><option value="5">Fri</option><option value="6">Sat</option></select></div><div class="form-g"><label>Type</label><select id="sType"><option value="screen_time">Screen Time</option><option value="app_block">App Block</option><option value="internet">Internet</option><option value="calls">Calls</option><option value="sms">SMS</option></select></div></div><div class="form-row"><div class="form-g"><label>Start Time</label><input type="time" id="sStart" value="08:00"></div><div class="form-g"><label>End Time</label><input type="time" id="sEnd" value="20:00"></div></div>',
+    async()=>{await api('/schedule/'+DID,{method:'POST',body:JSON.stringify({dayOfWeek:parseInt(qi('sDay').value),startTime:qi('sStart').value,endTime:qi('sEnd').value,restrictionType:qi('sType').value})});loadSchedule();toast('Rule added','s')});
+}
+
+// ==================== LIVE VIEW ====================
+let lvActive=null;
+async function toggleLV(){
+  if(lvActive){
+    await api('/live/'+lvActive+'/end',{method:'POST'});
+    lvActive=null;qi('lvBtn').textContent='Start Live View';
+    qi('lvPreview').innerHTML='<span>Camera preview</span>';
+    toast('Live view ended','i');
+  }else{
+    if(!DID){toast('Select a device first','e');return}
+    const d=await api('/live/start',{method:'POST',body:JSON.stringify({deviceId:DID})});
+    if(d&&(d.id)){lvActive=d.id;qi('lvBtn').textContent='Stop Live View';qi('lvPreview').innerHTML='<span style="animation:pulse 2s infinite">&#9785; Live streaming...</span>';toast('Live view started','s')}
+    else toast('Failed to start','e');
+  }
+}
+async function loadLVHist(){
+  if(!DID)return;
+  const d=await api('/live/'+DID+'/history');
+  const list=Array.isArray(d)?d:(d&&d.value?d.value:[]);
+  qi('lvHist').innerHTML=list.length===0?'<div class="empty-state"><p>No live sessions</p></div>':
+    list.map(s=>`<div class="list-item"><div class="av" style="background:${COLS[0]}22;color:${COLS[0]}">&#9785;</div><div class="info"><div class="nm">${s.session_type||'Video'} - ${s.status}</div><div class="dt">Duration: ${s.duration_seconds||0}s</div></div><div class="meta">${ago(s.created_at)}</div></div>`).join('');
+}
+
+// ==================== STATISTICS ====================
+let statCharts={};
+async function loadStats(){
+  if(!DID)return;
+  const d=await api('/stats/'+DID);
+  if(!d)return;
+  qi('statHeader').innerHTML=[
+    {val:d.sms||0,lbl:'Total SMS'},{val:d.calls||0,lbl:'Total Calls'},{val:d.apps||0,lbl:'Apps'},{val:d.locations||0,lbl:'Locations'},
+    {val:d.screenTimeToday||0,lbl:'Screen Today (m)'},{val:d.screenTimeWeek||0,lbl:'Screen Week (m)'}
+  ].map((s,i)=>`<div class="stat-card" style="animation-delay:${i*0.03}s"><div class="stat-val">${s.val}</div><div class="stat-lbl">${s.lbl}</div></div>`).join('');
+
+  Object.values(statCharts).forEach(c=>{try{c.destroy()}catch{}});
+  statCharts={};
+
+  if(d.topApps&&d.topApps.length>0){
+    statCharts.app=new Chart(qi('appChart'),{type:'doughnut',data:{labels:d.topApps.map(a=>a[0]),datasets:[{data:d.topApps.map(a=>a[1]),backgroundColor:COLS}]},options:{plugins:{legend:{position:'bottom',labels:{color:'#888',boxWidth:12}}}}});
+  }
+  statCharts.sms=new Chart(qi('smsChart'),{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'SMS',data:[d.sms||0,0,0,0,0,0,0],backgroundColor:COLS[0]}]},options:{scales:{y:{beginAtZero:true,grid:{color:'#2a2a3e'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+  statCharts.calls=new Chart(qi('callsChart'),{type:'bar',data:{labels:['Mon','Tue','Wed','Thu','Fri','Sat','Sun'],datasets:[{label:'Calls',data:[d.calls||0,0,0,0,0,0,0],backgroundColor:COLS[1]}]},options:{scales:{y:{beginAtZero:true,grid:{color:'#2a2a3e'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+  statCharts.screen=new Chart(qi('screenChart'),{type:'line',data:{labels:['Day 1','Day 2','Day 3','Day 4','Day 5','Day 6','Day 7'],datasets:[{label:'Minutes',data:[d.screenTimeToday||0,0,0,0,0,0,0],borderColor:COLS[2],backgroundColor:COLS[2]+'22',fill:true,tension:.4}]},options:{scales:{y:{beginAtZero:true,grid:{color:'#2a2a3e'}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+}
+
+// ==================== REPORTS ====================
+async function genReport(type){
+  if(!DID){toast('Select a device','e');return}
+  toast('Generating '+type.toUpperCase()+' report...','i');
+  const d=await api('/stats/'+DID);
+  const device=await api('/devices').then(list=>Array.isArray(list)?list.find(x=>x.device_id===DID):null);
+  if(!d){toast('No data for report','e');return}
+
+  const now=new Date().toISOString().split('T')[0];
+  const title='Parental Control Report - '+now;
+  let html=`<h2>${title}</h2><h4>Device: ${device?.device_name||DID}</h4><hr>`;
+  html+=`<table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>Metric</th><th>Count</th></tr>`;
+  Object.entries(d).filter(([k])=>!['topApps','screenTimeToday','screenTimeWeek'].includes(k)).forEach(([k,v])=>html+=`<tr><td>${k}</td><td>${v}</td></tr>`);
+  html+='</table>';
+  if(d.topApps&&d.topApps.length>0){
+    html+='<h3>Top Apps</h3><table border="1" cellpadding="6" style="border-collapse:collapse;width:100%"><tr><th>App</th><th>Minutes</th></tr>';
+    d.topApps.forEach(([a,m])=>html+=`<tr><td>${a}</td><td>${m}</td></tr>`);
+    html+='</table>';
+  }
+
+  if(type==='html'||type==='pdf'){
+    qi('reportPreview').innerHTML=html;
+    if(type==='pdf'){window.print();toast('Print as PDF','s')}
+  }else if(type==='csv'){
+    const csv=[['Metric','Value']];
+    Object.entries(d).filter(([k])=>!['topApps'].includes(k)).forEach(([k,v])=>csv.push([k,v]));
+    if(d.topApps)csv.push(['---Top Apps---','']);d.topApps?.forEach(([a,m])=>csv.push([a,m]));
+    const blob=new Blob([csv.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='report_'+DID+'_'+now+'.csv';a.click();
+    toast('CSV downloaded','s');
+  }else if(type==='excel'){
+    const csv=[['Metric','Value']];
+    Object.entries(d).filter(([k])=>!['topApps'].includes(k)).forEach(([k,v])=>csv.push([k,v]));
+    csv.push(['',''],['Top App','Minutes']);d.topApps?.forEach(([a,m])=>csv.push([a,m]));
+    const blob=new Blob([csv.map(r=>r.join(',')).join('\n')],{type:'text/csv'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='report_'+DID+'_'+now+'.xls';a.click();
+    toast('Excel downloaded (CSV format)','s');
+  }
+  toast(type.toUpperCase()+' report generated','s');
+}
+
+// ==================== ACCOUNT ====================
+async function updProfile(){
+  const n=qi('acctName').value,e=qi('acctEmail').value;
+  const d=await api('/auth/profile',{method:'PUT',body:JSON.stringify({fullName:n,email:e})});
+  if(d)toast('Profile updated','s');
+}
+async function chPwd(){
+  const c=qi('acctCur').value,n=qi('acctNew').value;
+  if(!c||!n){toast('Fill all fields','e');return}
+  const d=await api('/auth/change-password',{method:'POST',body:JSON.stringify({currentPassword:c,newPassword:n})});
+  if(d)toast('Password changed','s');else toast('Failed','e');
+}
+async function loadDeviceSettings(){
+  if(!DID){qi('acctDeviceSettings').innerHTML='<div class="empty-state"><p>Select a device to configure</p></div>';return}
+  const d=await api('/settings/'+DID);
+  if(!d){qi('acctDeviceSettings').innerHTML='<div class="empty-state"><p>No settings available</p></div>';return}
+  const s=d.data||d;
+  const toggles=[
+    {key:'camera_enabled',lbl:'Camera'},{key:'microphone_enabled',lbl:'Microphone'},{key:'location_enabled',lbl:'Location'},{key:'wifi_enabled',lbl:'WiFi'},
+    {key:'bluetooth_enabled',lbl:'Bluetooth'},{key:'mobile_data_enabled',lbl:'Mobile Data'},{key:'icon_hidden',lbl:'Icon Hidden'},{key:'screen_capture_enabled',lbl:'Screen Capture'}
+  ];
+  qi('acctDeviceSettings').innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">${
+    toggles.map(t=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:10px;background:rgba(255,255,255,.03);border-radius:8px"><span style="font-size:.85rem">${t.lbl}</span><div class="toggle ${s[t.key]?'on':''}" onclick="togSetting('${t.key}',${!s[t.key]})"></div></div>`).join('')
+  }</div>`;
+}
+async function togSetting(key,val){
+  await api('/settings/'+DID,{method:'PUT',body:JSON.stringify({[key]:val})});
+  loadDeviceSettings();toast('Setting updated','s');
+}
+async function clearAllData(){
+  if(!confirm('This will clear all data for this device. Continue?'))return;
+  const tables=['sms_messages','mms_messages','call_logs','locations','installed_apps','contacts','calendar_events','browser_history','screenshots','pictures','chat_messages','remote_commands','device_files','alerts','geofence_zones','geofence_alerts','schedule_restrictions','blocked_numbers','sms_commands','sim_info','screen_time_stats','app_usage_stats','daily_summary'];
+  for(const t of tables){await api('/device/clear/'+t,{method:'POST',body:JSON.stringify({deviceId:DID})}).catch(()=>{})}
+  toast('All device data cleared','s');refreshAll();
+}
+
+// ==================== DOCUMENT READY ====================
+document.addEventListener('DOMContentLoaded',()=>{
+  if(TOK)showApp();else qi('lW').style.display='flex';
+});
+</script></body></html>
