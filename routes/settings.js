@@ -14,11 +14,14 @@ router.get('/:deviceId', auth, async (req, res) => {
     if (error && error.code === 'PGRST116') {
       const { data: created, error: createErr } = await supabase
         .from('device_settings')
-        .insert({ device_id: req.params.deviceId })
+        .upsert({ device_id: req.params.deviceId, updated_at: new Date().toISOString() }, { onConflict: 'device_id' })
         .select()
         .single();
-      if (createErr) throw createErr;
-      data = created;
+      if (createErr) {
+        data = { device_id: req.params.deviceId, camera_enabled: 1, microphone_enabled: 1, location_enabled: 1, bluetooth_enabled: 1, wifi_enabled: 1, mobile_data_enabled: 1, icon_hidden: 0, screen_capture_enabled: 1 };
+      } else {
+        data = created;
+      }
     } else if (error) throw error;
 
     res.json(data);
@@ -47,7 +50,7 @@ router.put('/:deviceId', auth, async (req, res) => {
     if (error) throw error;
 
     const io = req.app.get('io');
-    io.to(`device:${req.params.deviceId}`).emit('command', { command: 'update_settings', params: updates });
+    if (io) io.to(`device:${req.params.deviceId}`).emit('command', { command: 'update_settings', params: updates });
     res.json(data);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
