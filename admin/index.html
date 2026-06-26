@@ -376,8 +376,8 @@ input,select,textarea,button{font-family:inherit}
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <script>
-const API=location.protocol+'//'+location.hostname+':3000/api';
-const WS=location.protocol==='https:'?'wss':'ws'+'://'+location.hostname+':3000';
+const API=location.origin+'/api';
+const WS='';
 const COLS=['#00b894','#3742fa','#ff4757','#ffa502','#6c5ce7','#00cec9','#ff6b81','#2ed573','#fd79a8','#e17055','#00b894','#0984e3','#fdcb6e','#e84393'];
 let CP='dashboard',DID='',RI=null,TOK=localStorage.getItem('token')||'',sock=null,sockConn=false,appData=[],calData=[],calY=new Date().getFullYear(),calM=new Date().getMonth(),charts={};
 const IM=['WhatsApp','Telegram','Messenger','Instagram','Snapchat','Signal','Discord','Skype','Viber','WeChat','Line','Kik','QQ','Threema','Wire','IMO','Hike','Tango','Gmail','YouTube','Facebook','Twitter','LinkedIn','Pinterest','Reddit','TikTok','Weibo'];
