@@ -15,7 +15,7 @@ router.post('/send', auth, async (req, res) => {
     if (error) throw error;
 
     const io = req.app.get('io');
-    io.to(`device:${deviceId}`).emit('command', { command: 'sms_command', params: { id: data.id, commandText, targetNumber } });
+    if (io) io.to(`device:${deviceId}`).emit('command', { command: 'sms_command', params: { id: data.id, commandText, targetNumber } });
     res.json(data);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

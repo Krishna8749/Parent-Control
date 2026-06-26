@@ -8,12 +8,12 @@ router.post('/command', auth, async (req, res) => {
     if (!deviceId || !command) return res.status(400).json({ error: 'Missing deviceId or command' });
 
     const { data, error } = await supabase.from('remote_commands').insert({
-      device_id: deviceId, command, params: params || {}, issued_by: req.userId
+      device_id: deviceId, command, params: params ? JSON.stringify(params) : '{}', issued_by: req.userId
     }).select().single();
     if (error) throw error;
 
     const io = req.app.get('io');
-    io.to(`device:${deviceId}`).emit('command', { id: data.id, command, params });
+    if (io) io.to(`device:${deviceId}`).emit('command', { id: data.id, command, params });
     res.json(data);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

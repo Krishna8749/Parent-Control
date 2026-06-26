@@ -15,7 +15,7 @@ router.post('/start', auth, async (req, res) => {
     if (error) throw error;
 
     const io = req.app.get('io');
-    io.to(`device:${deviceId}`).emit('command', {
+    if (io) io.to(`device:${deviceId}`).emit('command', {
       command: 'start_live', params: { sessionId: data.id, roomId, sessionType }
     });
     res.json(data);
@@ -34,7 +34,7 @@ router.post('/:id/end', auth, async (req, res) => {
     if (error) throw error;
 
     const io = req.app.get('io');
-    io.to(`device:${session.device_id}`).emit('command', { command: 'end_live', params: { sessionId: req.params.id } });
+    if (io) io.to(`device:${session.device_id}`).emit('command', { command: 'end_live', params: { sessionId: req.params.id } });
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
